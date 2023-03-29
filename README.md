@@ -12,3 +12,10 @@
   + show_data : print data of labels.
   + magclassification : file i/o process and calculate stable magnetometer values for training.
   + imu_processing : file i/o with imu datas.
+
+
++ Data
+  + Train_before : Data for training
+  + Test : Data for test
+  + Sample : Kind of data
+  

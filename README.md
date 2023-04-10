@@ -4,6 +4,7 @@
 + Code/main
   + accessorydetect : Simple solution
   + model_test : Test, train of machine learning models 
+  + main : Magnetometer Infer
 
 
 + Code/sub
@@ -21,4 +22,5 @@
   + nature1 : Flip & attach 
   + nature2 : Pick up & attach
   + nature3 : Object is in desk & move phone to object
-  
+  + inside : Inside walk
+

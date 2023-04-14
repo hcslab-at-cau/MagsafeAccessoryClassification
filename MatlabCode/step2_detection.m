@@ -4,8 +4,7 @@ wSize = 1 * rate;
 
 magThreshold = 1;
 cfarThreshold = .9999;
-corrDistanceType = 'correlation';
-distanceThreshold = .5;
+corrThreshold = .5;
 dAngleThreshold = .02;
 
 for cnt = 1:length(data)
@@ -17,12 +16,15 @@ for cnt = 1:length(data)
         lResult = min([length(mag.magnitude), length(acc.magnitude), ...
             length(mag.dAngle), length(gyro.dAngle)]);
 
+        % Filter 1 : the magnitude of mag should be large enough
         result(cnt, cnt2).filter1 = mag.magnitude(1:lResult) > magThreshold;
         result(cnt, cnt2).filter1(1:wSize) = false;
 
+        % Filter 2 : the delta angle measured from mag should be large enough
         result(cnt, cnt2).filter2 = result(cnt, cnt2).filter1 ...
             & mag.dAngle(1:lResult) > dAngleThreshold;
         
+        % Filter 3 : There should be sudden variation in the magnitude of mag
         result(cnt, cnt2).filter3 = result(cnt, cnt2).filter2;
         for cnt3 = find(result(cnt, cnt2).filter3)'
             range = cnt3 + (-wSize:-1);
@@ -30,6 +32,7 @@ for cnt = 1:length(data)
                 mag.magnitude(cnt3), cfarThreshold);
         end
 
+        % Filter 4 : There should be sudden variation in the magnitude of acc
         result(cnt, cnt2).filter4 = result(cnt, cnt2).filter3;
         for cnt3 = find(result(cnt, cnt2).filter4)'
             range = cnt3 + (-wSize:-1);
@@ -37,11 +40,12 @@ for cnt = 1:length(data)
                 acc.magnitude(cnt3), cfarThreshold);
         end        
 
+        % Filter 5 : the delta angles measured from mag and gyro should be
+        % different to each other
         result(cnt, cnt2).filter5 = result(cnt, cnt2).filter4;
         for cnt3 = find(result(cnt, cnt2).filter5)'
             range = cnt3 + 1 + (-wSize:-1);
-            result(cnt, cnt2).filter5(cnt3) = pdist([mag.dAngle(range), ...
-                gyro.dAngle(range)]', corrDistanceType) > distanceThreshold;
+            result(cnt, cnt2).filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
         end        
     end
 end
@@ -52,7 +56,7 @@ clf
 idx = 5;
 
 cur = data(idx);
-nRow = 5;
+nRow = 6;
 nCol = nTrials;
 for cnt = 1:nTrials
     mag = cur.trial(cnt).mag;
@@ -92,11 +96,18 @@ for cnt = 1:nTrials
     
     subplot(nRow, nCol, 4 * nCol + cnt)    
     hold on
+    plot(mag.dAngle)
+    plot(gyro.dAngle)
+    title('Delta angle')
+    legend({'Mag', 'Gyro'})
+        
+    subplot(nRow, nCol, 5 * nCol + cnt)    
+    hold on
 
     corrData = zeros(1, length(range));
     for cnt2 = wSize + 1:length(corrData)
         curRange = cnt2 - wSize + 1:cnt2;
-        corrData(cnt2) = 1 - corr(mag.dAngle(curRange), gyro.dAngle(curRange));
+        corrData(cnt2) = corr(mag.dAngle(curRange), gyro.dAngle(curRange));
     end    
     plot(corrData)
 
@@ -104,5 +115,5 @@ for cnt = 1:nTrials
         stem(range(result(idx, cnt).filter5), corrData(result(idx, cnt).filter5), ...
             'LineStyle', 'none');
     end
-    title('corr distance > .5')
+    title('corr < .5')
 end

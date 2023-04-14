@@ -1,89 +1,43 @@
-accId = 2;
-cur = data(accId);
+accId = 6;
+trialId = 1;
+
+mag = data(accId).trial(trialId).mag;
+gyro = data(accId).trial(trialId).gyro;
+
+cur = result(accId, trialId);
+detectRange = find(cur.filter5);
+detectRange = [detectRange(1), detectRange(end)];
+
+gyroDAngleThreshold = 0.015;
+magDAngleThreshold = 0.01;
 
 
-
-result = struct();
-for cnt = 1:nTrials
-    mag = cur.trial(cnt).mag;
-    acc = cur.trial(cnt).mag;
-    gyro = cur.trial(cnt).gyro;
-            
-    
-    lResult = min([length(mag.magnitude), length(acc.magnitude), length(mag.dAngle), length(gyro.dAngle)]);
-    
-    result(cnt).mCFAR = false(lResult, 1);
-    result(cnt).aCFAR = false(lResult, 1);
-    for cnt2 = cfarWSize + 1:lResult
-        range = cnt2 + (-cfarWSize:-1);
-
-        result(cnt).mCFAR(cnt2) = func_CFAR(mag.magnitude(range), mag.magnitude(cnt2), cfarThreshold);
-        result(cnt).aCFAR(cnt2) = func_CFAR(acc.magnitude(range), acc.magnitude(cnt2), cfarThreshold);
-    end
-        
-    result(cnt).distance = zeros(lResult, 1);
-    for cnt2 = corrWSize:lResult
-        range = cnt2 + (-corrWSize + 1:0);
-        result(cnt).distance(cnt2) = pdist([mag.dAngle(range), gyro.dAngle(range)]', corrDistanceType);
-    end    
-    
-    result(cnt).detected = result(cnt).mCFAR ...
-        & mag.magnitude(1:lResult) > magThreshold ...
-        & result(cnt).aCFAR ...
-        & result(cnt).distance > distanceThreshold ...
-        & mag.dAngle(1:lResult) > dAngleThreshold;
-end
+outerRange = zeros(1, 2);
+outerRange(1) = find(gyro.dAngle(1:detectRange(1)) > gyroDAngleThreshold, 1, 'last');
+outerRange(2) = find(gyro.dAngle(detectRange(2):end) > gyroDAngleThreshold, 1) + detectRange(2) - 1;
 
 
-figure(2)
+innerRange = zeros(1, 2);
+innerRange(1) = find(mag.dAngle(1:detectRange(1)) < magDAngleThreshold, 1, 'last');
+innerRange(2) = find(mag.dAngle(detectRange(2):end) < magDAngleThreshold, 1) + detectRange(2) - 1;
+
+
+figure(3)
 clf
+subplot 211
+hold on
+plot(mag.dAngle)
+plot(gyro.dAngle)
 
-nRow = 5;
-nCol = nTrials;
-for cnt = 1:nTrials
-    mag = cur.trial(cnt).mag;
-    acc = cur.trial(cnt).mag;
-    
-    range = 1:length(result(cnt).mCFAR);        
-    
-    subplot(nRow, nCol, cnt)
-    hold on
-    plot(mag.magnitude)          
-    
-    tmp = result(cnt).mCFAR & mag.magnitude(range) > magThreshold;    
-    stem(range(tmp), mag.magnitude(tmp), 'LineStyle', 'none');
-    legend('mag w/ HPF')
-    
-    if cnt == 1
-        title(cur.name)
-    end
-    
-    subplot(nRow, nCol, nCol + cnt)
-    hold on
-    plot(acc.magnitude)
-    
-    tmp = tmp & result(cnt).aCFAR;
-    stem(range(tmp), acc.magnitude(tmp), 'LineStyle', 'none');       
-    legend('acc w/ HPF')
-    
-    subplot(nRow, nCol, 2 * nCol + cnt)    
-    hold on
-    plot(result(cnt).distance)
-    
-    tmp = tmp & result(cnt).distance > distanceThreshold;
-    stem(range(tmp), result(cnt).distance(tmp), 'LineStyle', 'none');       
-    legend('corr distance')
-    
-    
-    subplot(nRow, nCol, 3 * nCol + cnt)
-    hold on
-    plot(mag.dAngle)    
-    tmp = tmp & mag.dAngle(range) > dAngleThreshold;
-    stem(range(tmp), mag.dAngle(tmp), 'LineStyle', 'none');       
-    legend('angle')
+xline(detectRange, 'k', 'LineWidth', 1)
+xline(outerRange, 'r', 'LineWidth', 2)
+xline(innerRange, 'b', 'LineWidth', 2)
 
-    
-    subplot(nRow, nCol, 4 * nCol + cnt)
-    plot(result(cnt).detected)
-    legend('detected')
-end
+
+subplot 212
+hold on
+plot(mag.sample)
+
+% xline(detectRange, 'k', 'LineWidth', 1)
+xline(outerRange, 'r', 'LineWidth', 2)
+xline(innerRange, 'b', 'LineWidth', 2)

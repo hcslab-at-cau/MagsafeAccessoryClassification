@@ -34,8 +34,8 @@ for cnt = 1:length(data)
     % Store the summary of the feature extraction result;
     nTrials = length([feature(cnt).trial(:).diff]) / 3;
     if nTrials > 1
-        feature(cnt).summary = mean(reshape([feature(cnt).trial(:).diff], 3, nTrials), 2);
-        feature(cnt).summary(4:6) = std(reshape([feature(cnt).trial(:).diff], 3, nTrials), 2);
+        feature(cnt).summary = mean(reshape([feature(cnt).trial(:).diff], 3, nTrials), 2)';
+        feature(cnt).summary(4:6) = std(reshape([feature(cnt).trial(:).diff], 3, nTrials)');
     else
         feature(cnt).summary = reshape([feature(cnt).trial(:).diff], 3, nTrials)';
         feature(cnt).summary(4:6) = [0, 0, 0];

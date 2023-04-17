@@ -1,7 +1,7 @@
 clear;
 
-prefix.train = 'Test_nature1';
-prefix.test = 'Test_nature1';
+prefix.train = 'Test';
+prefix.test = 'Test_nature2';
 
 train = load([prefix.train, '.mat']);
 test = load([prefix.test, '.mat']);
@@ -47,35 +47,18 @@ for cnt = 1:nAcc
         
     range = (cnt - 1) * nTestCur + (1:nTestCur);
     featureMatrix.test.data(range, :) = [vertcat(curTest.diff), vertcat(curTest.m)];
-    featureMatrix.test.label(range) = cnt;
-    
+    featureMatrix.test.label(range) = cnt;   
 end
-
-k = 5;
-[idx, distance] = knnsearch(featureMatrix.train.data, featureMatrix.test.data, ...
-    'Distance', 'euclidean', 'k', k);
-idx = featureMatrix.train.label(idx);
 
 result = [];
-result.count = zeros(length(idx), nAcc);
-result.distance = zeros(length(idx), nAcc);
-result.selected = zeros(length(idx), 1);
-for cnt = 1:length(idx)
-    for cnt2 = 1:k
-        result.count(cnt, idx(cnt, cnt2)) = result.count(cnt, idx(cnt, cnt2)) + 1;
-        result.distance(cnt, idx(cnt, cnt2)) = result.distance(cnt, idx(cnt, cnt2)) + distance(cnt, cnt2);
-    end
-    
-    [mVal, mIdx] = max(result.count(cnt, :));
-    if sum(result.count(cnt, :) == mVal) > 1
-        mIdx = find(result.count(cnt, :) == mVal);
-        
-        [~, mIdx2] = sort(result.distance(cnt, mIdx), 'ascend');        
-        mIdx = mIdx(mIdx2(1));
-    end
-    
-    result.selected(cnt) = mIdx;    
-end
+template.knn = templateKNN('NumNeighbors', 5, 'Standardize', true);
 
+model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
+    'Learners', template.knn);
+model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label);
 
-result.acc = sum(result.selected == featureMatrix.test.label) / length(idx)
+tmp = predict(model.knn, featureMatrix.test.data);
+sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)
+
+tmp = predict(model.svm, featureMatrix.test.data);
+sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)

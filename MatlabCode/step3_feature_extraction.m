@@ -1,5 +1,6 @@
 rotOrder = 'XYZ';
 
+extractInterval = [-wSize / 2, wSize / 4];
 feature = struct();
 for cnt = 1:length(data)
     feature(cnt).name = data(cnt).name;    
@@ -8,16 +9,20 @@ for cnt = 1:length(data)
         mag = data(cnt).trial(cnt2).mag;
         gyro = data(cnt).trial(cnt2).gyro;
 
+        % If detected
         if sum(detected(cnt).trial(cnt2).filter5) > 0
             cur = struct();
-            cur.baseIdx(1) = find(detected(cnt).trial(cnt2).filter5, 1);
-            cur.baseIdx(2) = find(detected(cnt).trial(cnt2).filter5, 1, 'last');
-                       
-            cur.extractRange(1) = cur.baseIdx(1) - wSize / 2;
-            cur.extractRange(2) = cur.baseIdx(2) + wSize / 4;
+
+            % Compute the range for feature extraction
+            cur.baseRange(1) = find(detected(cnt).trial(cnt2).filter5, 1);
+            cur.baseRange(2) = find(detected(cnt).trial(cnt2).filter5, 1, 'last');                      
+            cur.extractRange = cur.baseRange + extractInterval;
+           
+            % Compute the rotation matrix from "after attachment" to "before attachment"
             cur.euler = sum(gyro.sample(cur.extractRange, :)) * 1/rate;
             cur.rotm = eul2rotm(cur.euler, rotOrder);
     
+            % Rotate the (before) magnetometer reading and compare the readings
             cur.mags(1, :) = (cur.rotm \ mag.sample(cur.extractRange(1), :)')';
             cur.mags(2, :) = mag.sample(cur.extractRange(end), :);
             cur.diff = cur.mags(2, :) - cur.mags(1, :);
@@ -26,13 +31,14 @@ for cnt = 1:length(data)
         end
     end
     
+    % Store the summary of the feature extraction result;
     nTrials = length([feature(cnt).trial(:).diff]) / 3;
     if nTrials > 1
-        feature(cnt).summary = mean(reshape([feature(cnt).trial(:).diff], 3, nTrials)');
-        feature(cnt).summary(4:6) = std(reshape([feature(cnt).trial(:).diff], 3, nTrials)');
+        feature(cnt).summary = mean(reshape([feature(cnt).trial(:).diff], 3, nTrials), 2);
+        feature(cnt).summary(4:6) = std(reshape([feature(cnt).trial(:).diff], 3, nTrials), 2);
     else
         feature(cnt).summary = reshape([feature(cnt).trial(:).diff], 3, nTrials)';
-        feature(cnt).summary(4:6) = [0, 0, 0]
+        feature(cnt).summary(4:6) = [0, 0, 0];
     end
 
     disp(data(cnt).name)

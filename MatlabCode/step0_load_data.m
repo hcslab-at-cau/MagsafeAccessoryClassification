@@ -2,7 +2,7 @@ clear;
 
 % Data path parameters
 path.root = '../Data'; 
-path.postfix = 'Test_nature1';
+path.postfix = 'Test';
 path.data = [path.root, '/', path.postfix, '/'];
 
 % Data path for each accessory

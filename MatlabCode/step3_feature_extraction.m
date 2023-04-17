@@ -10,9 +10,8 @@ for cnt = 1:length(data)
         gyro = data(cnt).trial(cnt2).gyro;
 
         % If detected
+        cur = struct();
         if sum(detected(cnt).trial(cnt2).filter5) > 0
-            cur = struct();
-
             % Compute the range for feature extraction
             cur.baseRange(1) = find(detected(cnt).trial(cnt2).filter5, 1);
             cur.baseRange(2) = find(detected(cnt).trial(cnt2).filter5, 1, 'last');                      
@@ -26,25 +25,35 @@ for cnt = 1:length(data)
             cur.mags(1, :) = (cur.rotm \ mag.sample(cur.extractRange(1), :)')';
             cur.mags(2, :) = mag.sample(cur.extractRange(end), :);
             cur.diff = cur.mags(2, :) - cur.mags(1, :);
-    
-            feature(cnt).trial(cnt2) = cur;
+            cur.m = sqrt(sum(cur.diff.^2));            
+        else
+            cur.baseRange = [];
+            cur.extractRange = [];
+            cur.euler = [];
+            cur.rotm = [];
+            cur.mags = [];
+            cur.diff = [0, 0, 0];
+            cur.m = 0;
         end
+        
+        feature(cnt).trial(cnt2) = cur;
     end
     
     % Store the summary of the feature extraction result;
-    nTrials = length([feature(cnt).trial(:).diff]) / 3;
-    if nTrials > 1
-        feature(cnt).summary = mean(reshape([feature(cnt).trial(:).diff], 3, nTrials), 2)';
-        feature(cnt).summary(4:6) = std(reshape([feature(cnt).trial(:).diff], 3, nTrials)');
-    else
-        feature(cnt).summary = reshape([feature(cnt).trial(:).diff], 3, nTrials)';
-        feature(cnt).summary(4:6) = [0, 0, 0];
+    tmp = reshape([feature(cnt).trial(:).diff], 3, nTrials)';
+    for cnt2 = size(tmp, 1):-1:1
+        if tmp(cnt2, :) == [0, 0, 0]
+            tmp(cnt2, :) = [];
+        end
     end
+
+    feature(cnt).summary = mean(tmp);
 
     disp(data(cnt).name)
     disp(feature(cnt).summary)
 end
 
+save([path.postfix, '.mat'], 'data', 'detected', 'feature');
 
 figure(3)
 clf

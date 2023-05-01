@@ -1,5 +1,5 @@
-accId = 6;
-trials = 22:25;
+accId = 2;
+trials = 1:4;
 
 nCol = length(trials);
 nRow = 5;

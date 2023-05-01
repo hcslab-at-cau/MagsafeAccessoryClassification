@@ -41,13 +41,21 @@ for cnt = 1:length(data)
         
         magData.inferMag = zeros(l, 3);
         magData.refInferMag = zeros(l, 3);
+        magData.refInferMag100 = zeros(l, 3);
+
 
         for t = 2:l
             euler = gyroData(t, :) * 1/rate;
-            rotm = eul2rotm(euler, 'ZXY');
+            rotm = eul2rotm(euler, 'XYZ');
             magData.inferMag(t, :) = (rotm \ (refMag)')';
             magData.refInferMag(t, :) = (rotm\(magData.sample(t-1, :))')';
             refMag = magData.inferMag(t, :);
+        end
+
+        for t = 101:l
+            %euler = sum(gyroData(t-100, :)) * 1/rate;
+            %rotm = eul2rotm(euler, 'ZXY');
+
         end
         data(cnt).trial(cnt2).('mag') = magData;
 
@@ -58,6 +66,7 @@ figure(1)
 clf
 accId = 1;
 nRow = 3;
+nTrials = 1;
 nCol = nTrials;
 
 for cnt = 1:nTrials

@@ -56,10 +56,11 @@ end
 figure(2)
 clf
 
-idx = 13;
+idx = 2;
 
 cur = data(idx);
 nRow = 6;
+
 nCol = nTrials;
 for cnt = 1:nTrials
     mag = cur.trial(cnt).mag;

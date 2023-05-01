@@ -1,8 +1,12 @@
 clear;
 
 % Data path parameters
-path.root = '../Data/Default_dataset/Jaemin2'; 
-path.postfix = 'Normal_objects';
+path.root = '../Data/Default_dataset/Jaemin2';
+path.postfix = 'Holders';
+
+%path.root = '../Data/';
+%path.postfix = 'Trivial';
+
 path.data = [path.root, '/', path.postfix, '/'];
 
 % Data path for each accessory

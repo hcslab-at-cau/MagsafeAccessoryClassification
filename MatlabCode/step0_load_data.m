@@ -1,8 +1,8 @@
 clear;
 
 % Data path parameters
-path.root = '../Data'; 
-path.postfix = 'Test';
+path.root = '../Data/Default_dataset/Jaemin2'; 
+path.postfix = 'Normal_objects';
 path.data = [path.root, '/', path.postfix, '/'];
 
 % Data path for each accessory
@@ -11,7 +11,7 @@ path.accessory(~[path.accessory(:).isdir]) = [];
 path.accessory(ismember({path.accessory(:).name}, {'.', '..'})) = [];
 
 % Sensor list
-sensors = {'acc', 'gyro', 'lacc', 'mag'};
+sensors = {'acc', 'gyro', 'mag'};
 nSensors = length(sensors);
 
 % Load sensor data

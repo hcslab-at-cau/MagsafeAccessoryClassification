@@ -28,11 +28,29 @@ for cnt = 1:length(data)
                     for cnt4 = 2:length(cur.sample)
                         cur.dAngle(cnt4) = subspace(cur.sample(cnt4, :)', cur.sample(cnt4 - 1, :)');
                     end                       
-                    cur.magnitude = sum(filtfilt(b.mag, a.mag, cur.sample).^2, 2); % Extract the magnitude of high-pass filtered samples         
+                    cur.magnitude = sum(filtfilt(b.mag, a.mag, cur.sample).^2, 2); % Extract the magnitude of high-pass filtered samples  
             end
 
             data(cnt).trial(cnt2).(char(sensors(cnt3))) = cur;
         end
+        magData = data(cnt).trial(cnt2).('mag');
+        gyroData = data(cnt).trial(cnt2).('gyro').sample;
+        
+        l = min(length(gyroData), length(magData.sample));
+        refMag = magData.sample(1, :);
+        
+        magData.inferMag = zeros(l, 3);
+        magData.refInferMag = zeros(l, 3);
+
+        for t = 2:l
+            euler = gyroData(t, :) * 1/rate;
+            rotm = eul2rotm(euler, 'ZXY');
+            magData.inferMag(t, :) = (rotm \ (refMag)')';
+            magData.refInferMag(t, :) = (rotm\(magData.sample(t-1, :))')';
+            refMag = magData.inferMag(t, :);
+        end
+        data(cnt).trial(cnt2).('mag') = magData;
+
     end
 end
  

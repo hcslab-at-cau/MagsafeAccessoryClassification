@@ -6,7 +6,7 @@ rate = 100;
 order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 
-% Filter parameters for accelerometer
+% Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');
 
 for cnt = 1:length(data)
@@ -41,8 +41,7 @@ for cnt = 1:length(data)
         
         magData.inferMag = zeros(l, 3);
         magData.refInferMag = zeros(l, 3);
-        magData.refInferMag100 = zeros(l, 3);
-
+        magData.refInferMag100 = zeros(1, 3);
 
         for t = 2:l
             euler = gyroData(t, :) * 1/rate;
@@ -53,10 +52,19 @@ for cnt = 1:length(data)
         end
 
         for t = 101:l
-            %euler = sum(gyroData(t-100, :)) * 1/rate;
-            %rotm = eul2rotm(euler, 'ZXY');
-
+            refMag = magData.sample(t-100, :);
+            euler = sum(gyroData(t-100:t, :)) * 1/rate;
+            rotm = eul2rotm(euler, 'XYZ');
+            magData.refInferMag100(t, :) = (rotm \ (refMag)')';
         end
+
+        diff = zeros(length(l), 3);
+    
+        for t = 1:length(magData.sample)-1
+            diff(t, :) = magData.sample(t, :) - magData.inferMag(t, :);
+        end
+        
+        magData.diff = diff;
         data(cnt).trial(cnt2).('mag') = magData;
 
     end
@@ -66,10 +74,9 @@ figure(1)
 clf
 accId = 1;
 nRow = 3;
-nTrials = 1;
-nCol = nTrials;
+nCol = 5;
 
-for cnt = 1:nTrials
+for cnt = 1:5
     cur = data(accId).trial(cnt);
     
     subplot(nRow, nCol, cnt)

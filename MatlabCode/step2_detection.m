@@ -32,14 +32,14 @@ for cnt = 1:length(data)
             cur.filter3(cnt3) = func_CFAR(mag.magnitude(range), ...
                 mag.magnitude(cnt3), cfarThreshold);
         end
-
+        
         % Filter 4 : There should be sudden variation in the magnitude of acc
         cur.filter4 = cur.filter3;
         for cnt3 = find(cur.filter4)'
             range = cnt3 + (-wSize:-1);
             cur.filter4(cnt3) = func_CFAR(acc.magnitude(range), ...
                 acc.magnitude(cnt3), cfarThreshold);
-        end        
+        end
 
         % Filter 5 : the delta angles measured from mag and gyro should be
         % different to each other
@@ -47,7 +47,16 @@ for cnt = 1:length(data)
         for cnt3 = find(cur.filter5)'
             range = cnt3 + 1 + (-wSize:-1);
             cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
-        end        
+        end
+
+        % Filter 6 : 1초 내 정리
+        cur.filter6 = cur.filter5;
+        for cnt3 = find(cur.filter6)'
+            range = cnt3 + (1:wSize);
+            for cnt4 = range
+                cur.filter6(cnt4) = 0;
+            end
+        end
 
         detected(cnt).trial(cnt2) = cur;
     end
@@ -56,13 +65,12 @@ end
 figure(2)
 clf
 
-idx = 2;
-
+idx = 1;
 cur = data(idx);
-nRow = 6;
 
-nCol = nTrials;
-for cnt = 1:nTrials
+nRow = 6;
+nCol = 4;
+for cnt = 1:4
     mag = cur.trial(cnt).mag;
     acc = cur.trial(cnt).acc;
     gyro = cur.trial(cnt).gyro;

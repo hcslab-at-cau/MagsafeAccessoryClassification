@@ -1,8 +1,8 @@
-accId = 2;
-trials = 1:4;
+accId = 1;
+trials = 1:5;
 
 nCol = length(trials);
-nRow = 5;
+nRow = 4;
 
 figure(nCol*nRow)
 clf
@@ -12,14 +12,8 @@ for trialId = trials
     objectName = data(accId).name;
     mag = data(accId).trial(trialId).mag;
     gyro = data(accId).trial(trialId).gyro;
-    detect = detected(accId).trial(trialId).filter5;
+    detect = detected(accId).trial(trialId).filter6;
     
-    diff = zeros(length(mag), 3);
-    
-    for t = 1:length(mag.sample)-1
-        diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
-    end
-   
     subplot(nRow, nCol, cnt)
     hold on
     plot(mag.sample)
@@ -32,18 +26,29 @@ for trialId = trials
     hold on
     plot(mag.inferMag)
     title('Infer mag')
-
-    subplot(nRow, nCol, nCol * 2 + cnt)
-    hold on
-    plot(mag.refInferMag)
-    title('Infer mag using previous mag')
     
-    subplot(nRow, nCol, nCol * 3 + cnt)
+    diff = zeros(length(mag), 3);
+    for t = 1:length(mag.sample)-1
+        diff(t, :) = mag.sample(t, :) - mag.refInferMag100(t, :);
+    end
+
+    %subplot(nRow, nCol, nCol * 2 + cnt)
+    %hold on
+    %plot(diff)
+    %title('Infer mag using previous mag')
+    
+    subplot(nRow, nCol, nCol * 2 + cnt)
     hold on
     plot(detect)
     title('detected (filter5)')
+    
+    diff = zeros(length(mag), 3);
+    
+    for t = 1:length(mag.sample)-1
+        diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
+    end
 
-    subplot(nRow, nCol, nCol * 4 + cnt)
+    subplot(nRow, nCol, nCol * 3 + cnt)
     hold on
     plot(diff)
     title('diff')

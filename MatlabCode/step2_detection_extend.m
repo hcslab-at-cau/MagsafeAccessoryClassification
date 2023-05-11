@@ -4,34 +4,46 @@
 % It can be use to environment where has no ferromagnetic.
 
 for cnt = 1:length(data)
+    data(cnt).attachCount = 0;
+    data(cnt).detachCount = 0;
     for cnt2 = 1:nTrials
         detect = detected(cnt).trial(cnt2).filter6;
         f = data(cnt).name;
         % Attach -> diff  0 -> Other value   : +1
         % Detach -> diff  other value -> 0   : -1
+        aCnt = 0;
+        dCnt = 0;
+        attach = struct();
+        detach = struct();
+        
+        lCnt = 1;
         for cnt3 = find(detect)'
-            beforeRange = (-50:-1) + cnt3;
-            if beforeRange(1) <= 0
-                beforeRange(1) = 1;
-            end
-            disp(beforeRange)
-            disp('cnt3')
-            disp(cnt3)
-            disp(f)
-
-            afterRange = (1:50) + cnt3;
+            beforeRange = (-100:-50) + cnt3;
+            afterRange = (50:100) + cnt3;
             
-            beforeData = abs(data(cnt).trial(cnt2).mag.sample(beforeRange, :));
+            beforeData = abs(data(cnt).trial(cnt2).mag.diff(beforeRange, :));
             beforeMean = mean(beforeData(:));
             
-            afterData = abs(data(cnt).trial(cnt2).mag.sample(afterRange, :));
+            afterData = abs(data(cnt).trial(cnt2).mag.diff(afterRange, :));
             afterMean = mean(afterData(:));
             
             if afterMean > beforeMean
-                disp('get')
-                detect(cnt2) = -1;
+                % Attach
+                aCnt = aCnt + 1;
+            else
+                % Detach
+                dCnt = dCnt + 1;
             end
+            % lCnt = lCnt + 1;
         end
-        detected(cnt).trial(cnt2).filter6 = detect;
+        data(cnt).trial(cnt2).attach = aCnt;
+        data(cnt).trial(cnt2).detach = dCnt;
+
+        
+        data(cnt).attachCount = data(cnt).attachCount + aCnt;
+        data(cnt).detachCount = data(cnt).detachCount + dCnt;
     end
+
+    data(cnt).attachAccurracy = data(cnt).attachCount/50 * 100.0;
+    data(cnt).detachAccurracy = data(cnt).detachCount/50 * 100.0;
 end

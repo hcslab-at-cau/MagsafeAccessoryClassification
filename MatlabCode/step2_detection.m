@@ -49,10 +49,10 @@ for cnt = 1:length(data)
             cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
         end
 
-        % Filter 6 : 1초 내 정리
+        % Filter 6 : 2초 내 정리
         cur.filter6 = cur.filter5;
         for cnt3 = find(cur.filter6)'
-            range = cnt3 + (1:wSize);
+            range = cnt3 + (1:wSize*2);
             for cnt4 = range
                 cur.filter6(cnt4) = 0;
             end
@@ -69,8 +69,9 @@ idx = 1;
 cur = data(idx);
 
 nRow = 6;
-nCol = 4;
-for cnt = 1:4
+nCol = 2;
+
+for cnt = 1:2
     mag = cur.trial(cnt).mag;
     acc = cur.trial(cnt).acc;
     gyro = cur.trial(cnt).gyro;

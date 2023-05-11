@@ -40,27 +40,9 @@ for cnt = 1:length(data)
         refMag = magData.sample(1, :);
         
         magData.inferMag = zeros(l, 3);
-        magData.refInferMag = zeros(l, 3);
-        magData.refInferMag100 = zeros(1, 3);
-
-        for t = 2:l
-            euler = gyroData(t, :) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            magData.inferMag(t, :) = (rotm \ (refMag)')';
-            magData.refInferMag(t, :) = (rotm\(magData.sample(t-1, :))')';
-            refMag = magData.inferMag(t, :);
-        end
-
-        for t = 101:l
-            refMag = magData.sample(t-100, :);
-            euler = sum(gyroData(t-100:t, :)) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            magData.refInferMag100(t, :) = (rotm \ (refMag)')';
-        end
-
         diff = zeros(length(l), 3);
     
-        for t = 1:length(magData.sample)-1
+        for t = 1:l-1
             diff(t, :) = magData.sample(t, :) - magData.inferMag(t, :);
         end
         

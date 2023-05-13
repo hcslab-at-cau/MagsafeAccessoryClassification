@@ -21,7 +21,8 @@ for cnt = 1:length(showTrials)
     subplot(nRow, nCol, cnt)
     hold on
     plot(mag.diff)
-    stem(find(detect), zeros(nnz(detect), 1), 'LineStyle','none')
+    stem(find(detect), mag.diff(detect), 'LineStyle','none')
+    %stem(find(detect), zeros(nnz(detect), 1), 'LineStyle','none')
     title('Diff & Detect')
 
     subplot(nRow, nCol, nCol + cnt)

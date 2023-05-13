@@ -17,7 +17,7 @@ for cnt = 1:length(data)
             length(mag.dAngle), length(gyro.dAngle)]);
 
         cur = struct();
-        % Filter 1 : the magnitude of mag should be large enough
+        % Filter 1 : the magnitude of mag should be large5 enough
         cur.filter1 = mag.magnitude(1:lResult) > magThreshold;
         cur.filter1(1:wSize) = false;
 
@@ -45,7 +45,7 @@ for cnt = 1:length(data)
         % different to each other
         cur.filter5 = cur.filter4;
         for cnt3 = find(cur.filter5)'
-            range = cnt3 + 1 + (-wSize:-1);
+            range = cnt3 + 1 + (-wSize/2:-1);
             cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
         end
 

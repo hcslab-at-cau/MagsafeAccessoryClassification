@@ -65,23 +65,26 @@ end
 figure(2)
 clf
 
-idx = 1;
+idx = 4;
 cur = data(idx);
 
-nRow = 6;
-nCol = 2;
 
-for cnt = 1:2
-    mag = cur.trial(cnt).mag;
-    acc = cur.trial(cnt).acc;
-    gyro = cur.trial(cnt).gyro;
+showTrials = 8:8;
+nRow = 6;
+nCol = length(showTrials);
+
+for cnt = 1:length(showTrials)
+    mag = cur.trial(showTrials(cnt)).mag;
+    acc = cur.trial(showTrials(cnt)).acc;
+    gyro = cur.trial(showTrials(cnt)).gyro;
     
-    range = 1:length(detected(idx).trial(cnt).filter1);        
+    range = 1:length(detected(idx).trial(showTrials(cnt)).filter1);        
     
     subplot(nRow, nCol, cnt)
     hold on
     plot(mag.magnitude)              
-    stem(range(detected(idx).trial(cnt).filter1), mag.magnitude(detected(idx).trial(cnt).filter1), 'LineStyle', 'none');    
+    stem(range(detected(idx).trial(showTrials(cnt)).filter1), ...
+        mag.magnitude(detected(idx).trial(showTrials(cnt)).filter1), 'LineStyle', 'none');    
     
     if cnt == 1
         title([cur.name, ' (mag > 1)'])
@@ -92,19 +95,22 @@ for cnt = 1:2
     subplot(nRow, nCol, nCol + cnt)
     hold on
     plot(mag.dAngle)
-    stem(range(detected(idx).trial(cnt).filter2), mag.dAngle(detected(idx).trial(cnt).filter2), 'LineStyle', 'none');
+    stem(range(detected(idx).trial(showTrials(cnt)).filter2), ...
+        mag.dAngle(detected(idx).trial(showTrials(cnt)).filter2), 'LineStyle', 'none');
     title('Delta angle > .02')
 
     subplot(nRow, nCol, 2 * nCol + cnt)
     hold on
     plot(mag.magnitude)
-    stem(range(detected(idx).trial(cnt).filter3), mag.magnitude(detected(idx).trial(cnt).filter3), 'LineStyle', 'none');
+    stem(range(detected(idx).trial(showTrials(cnt)).filter3), ...
+        mag.magnitude(detected(idx).trial(showTrials(cnt)).filter3), 'LineStyle', 'none');
     title('mag cfar (.9999)')
 
     subplot(nRow, nCol, 3 * nCol + cnt)
     hold on
     plot(acc.magnitude)
-    stem(range(detected(idx).trial(cnt).filter4), acc.magnitude(detected(idx).trial(cnt).filter4), 'LineStyle', 'none');
+    stem(range(detected(idx).trial(showTrials(cnt)).filter4), ...
+        acc.magnitude(detected(idx).trial(showTrials(cnt)).filter4), 'LineStyle', 'none');
     title('acc cfar (.9999)')
     
     subplot(nRow, nCol, 4 * nCol + cnt)    
@@ -124,8 +130,9 @@ for cnt = 1:2
     end    
     plot(corrData)
 
-    if sum(detected(idx).trial(cnt).filter5 > 0)
-        stem(range(detected(idx).trial(cnt).filter5), corrData(detected(idx).trial(cnt).filter5), ...
+    if sum(detected(idx).trial(showTrials(cnt)).filter5 > 0)
+        stem(range(detected(idx).trial(showTrials(cnt)).filter5), ...
+            corrData(detected(idx).trial(showTrials(cnt)).filter5), ...
             'LineStyle', 'none');
     end
     title('corr < .5')

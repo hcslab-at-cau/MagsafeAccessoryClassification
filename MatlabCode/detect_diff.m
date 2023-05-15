@@ -1,5 +1,5 @@
-accId = 1;
-showTrials = 1:2;
+accId = 3;
+showTrials = 1:1;
 
 figure(10)
 clf

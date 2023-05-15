@@ -6,6 +6,8 @@ rate = 100;
 order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 
+wSize = 1 * rate;
+
 % Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');
 
@@ -33,31 +35,49 @@ for cnt = 1:length(data)
 
             data(cnt).trial(cnt2).(char(sensors(cnt3))) = cur;
         end
+
         magData = data(cnt).trial(cnt2).('mag');
         gyroData = data(cnt).trial(cnt2).('gyro').sample;
+        acc = data(cnt).trial(cnt2).('acc');
         
-        l = min(length(gyroData), length(magData.sample));
+        l = min([length(gyroData), length(magData.sample), length(acc.sample)]);
         refMag = magData.sample(1, :);
         
         magData.inferMag = zeros(l, 3);
-    
+            
         for t = 2:l
             euler = gyroData(t, :) * 1/rate;
             rotm = eul2rotm(euler, 'XYZ');
             magData.inferMag(t, :) = (rotm \ (refMag)')';
             magData.refInferMag(t, :) = (rotm\(magData.sample(t-1, :))')';
             refMag = magData.inferMag(t, :);
+
+            %rotMat = mag.sample()
         end
 
         diff = zeros(length(l), 3);
+
     
         for t = 1:l-1
             diff(t, :) = magData.sample(t, :) - magData.inferMag(t, :);
         end
         
+        acc.cfarData = zeros(1, l);
+        magData.cfarData = zeros(1, l);
+
+        for cnt3 = wSize + 1:l
+            range = cnt3 + (-wSize:-1);
+            
+            magData.cfarData(cnt3) = func_CFAR(magData.magnitude(range), ...
+                magData.magnitude(cnt3), 0.9999);
+
+            acc.cfarData(cnt3) = func_CFAR(acc.magnitude(range), ...
+                acc.magnitude(cnt3), 0.9999);
+        end
+        
         magData.diff = diff;
         data(cnt).trial(cnt2).('mag') = magData;
-
+        data(cnt).trial(cnt2).('acc') = acc;
     end
 end
  

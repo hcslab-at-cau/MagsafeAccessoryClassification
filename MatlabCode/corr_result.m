@@ -1,5 +1,5 @@
 accId = 1;
-showTrials = 4:4;
+showTrials = 4:5;
 
 figure(14)
 clf
@@ -20,7 +20,7 @@ for cnt = 1:length(showTrials)
 
     for cnt2 = 2:length(mag.sample)
         % Mag의 Rotate vector를 구하고 euler로..
-        rotMat = mag.sample(cnt2 - 1, :).' * pinv(mag.sample(cnt2, :)).';
+        rotMat = (mag.sample(cnt2 - 1, :)*1/rate).' * pinv(mag.sample(cnt2, :) * 1/rate).';
         euler = rotm2eul(rotMat, 'ZYX');
         magEuler(cnt2, :) = euler;
     end

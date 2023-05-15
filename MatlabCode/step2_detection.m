@@ -45,7 +45,7 @@ for cnt = 1:length(data)
         % different to each other
         cur.filter5 = cur.filter4;
         for cnt3 = find(cur.filter5)'
-            range = cnt3 + 1 + (-wSize/2:-1);
+            range = cnt3 + 1 + (-wSize:-1);
             cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
         end
 
@@ -58,6 +58,20 @@ for cnt = 1:length(data)
             end
         end
 
+        % % Temporary filter : Euler angle
+        % cur.tFilter = cur.filter4;
+        % for cnt3 = find(cur.tFilter)'
+        %     range = cnt3 + 1 + (-wSize:-1);
+        % 
+        %     corrData = zeros(3, 1);
+        % 
+        %     for cnt4 = 1:3
+        %         corrData(cnt4) = corr()
+        %     end
+        % 
+        %     cur.tFilter(cnt3) = ;
+        % end
+
         detected(cnt).trial(cnt2) = cur;
     end
 end
@@ -65,11 +79,11 @@ end
 figure(2)
 clf
 
-idx = 4;
+idx = 3;
 cur = data(idx);
 
 
-showTrials = 8:8;
+showTrials = 1:1;
 nRow = 6;
 nCol = length(showTrials);
 

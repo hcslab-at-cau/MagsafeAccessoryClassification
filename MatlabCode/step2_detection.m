@@ -58,20 +58,6 @@ for cnt = 1:length(data)
             end
         end
 
-        % % Temporary filter : Euler angle
-        % cur.tFilter = cur.filter4;
-        % for cnt3 = find(cur.tFilter)'
-        %     range = cnt3 + 1 + (-wSize:-1);
-        % 
-        %     corrData = zeros(3, 1);
-        % 
-        %     for cnt4 = 1:3
-        %         corrData(cnt4) = corr()
-        %     end
-        % 
-        %     cur.tFilter(cnt3) = ;
-        % end
-
         detected(cnt).trial(cnt2) = cur;
     end
 end

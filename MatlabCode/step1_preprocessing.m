@@ -36,48 +36,27 @@ for cnt = 1:length(data)
             data(cnt).trial(cnt2).(char(sensors(cnt3))) = cur;
         end
 
-        magData = data(cnt).trial(cnt2).('mag');
-        gyroData = data(cnt).trial(cnt2).('gyro').sample;
-        acc = data(cnt).trial(cnt2).('acc');
+        % Infer Magnetometer using gyroscope
+        mag = data(cnt).trial(cnt2).('mag');
+        gyro = data(cnt).trial(cnt2).('gyro').sample;
         
-        l = min([length(gyroData), length(magData.sample), length(acc.sample)]);
-        refMag = magData.sample(1, :);
+        lResult = min([length(gyro), length(mag.sample)]);
+        refMag = mag.sample(1, :);
         
-        magData.inferMag = zeros(l, 3);
+        mag.inferMag = zeros(lResult, 3);
+        mag.diff = zeros(lResult, 3);
             
-        for t = 2:l
-            euler = gyroData(t, :) * 1/rate;
+        for t = 2:lResult
+            euler = gyro(t, :) * 1/rate;
             rotm = eul2rotm(euler, 'XYZ');
-            magData.inferMag(t, :) = (rotm \ (refMag)')';
-            magData.refInferMag(t, :) = (rotm\(magData.sample(t-1, :))')';
-            refMag = magData.inferMag(t, :);
+            mag.inferMag(t, :) = (rotm \ (refMag)')';
+            mag.refInferMag(t, :) = (rotm\(mag.sample(t-1, :))')';
+            refMag = mag.inferMag(t, :);
 
-            %rotMat = mag.sample()
+            mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
         end
 
-        diff = zeros(length(l), 3);
-
-    
-        for t = 1:l-1
-            diff(t, :) = magData.sample(t, :) - magData.inferMag(t, :);
-        end
-        
-        acc.cfarData = zeros(1, l);
-        magData.cfarData = zeros(1, l);
-
-        for cnt3 = wSize + 1:l
-            range = cnt3 + (-wSize:-1);
-            
-            magData.cfarData(cnt3) = func_CFAR(magData.magnitude(range), ...
-                magData.magnitude(cnt3), 0.9999);
-
-            acc.cfarData(cnt3) = func_CFAR(acc.magnitude(range), ...
-                acc.magnitude(cnt3), 0.9999);
-        end
-        
-        magData.diff = diff;
-        data(cnt).trial(cnt2).('mag') = magData;
-        data(cnt).trial(cnt2).('acc') = acc;
+        data(cnt).trial(cnt2).('mag') = mag;
     end
 end
  

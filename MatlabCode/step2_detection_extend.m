@@ -2,11 +2,17 @@
 
 for cnt = 1:length(data)
     for cnt2 = 1:nTrials
-        state = StateEnum.Init;
+        state = false;
         detect = detected(cnt).trial(cnt2).filter6;
 
         for cnt3 = find(detect)'
-            
+            if state == false
+                state = true;
+
+                
+            else
+                state = false;
+            end
 
 
         end

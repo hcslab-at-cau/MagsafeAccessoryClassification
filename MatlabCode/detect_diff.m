@@ -1,11 +1,11 @@
-accId = 3;
-showTrials = 1:1;
+accId = 2;
+showTrials = 1:2;
 
 figure(10)
 clf
 
 nCol = length(showTrials);
-nRow = 4;
+nRow = 5;
 
 for cnt = 1:length(showTrials)
     detect = detected(accId).trial(showTrials(cnt)).filter6;
@@ -38,24 +38,11 @@ for cnt = 1:length(showTrials)
     subplot(nRow, nCol, nCol*3 + cnt)
     hold on
     plot(corrData)
-    stem(range(detect), corrData(detect), 'LineStyle','none')
+    %stem(range(detect), corrData(detect), 'LineStyle','none')
     title('Correlation')
+
+    subplot(nRow, nCol, nCol*4+ cnt)
+    plot(mag.inferAngle)
+    title('Angle between infermag ')
     
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

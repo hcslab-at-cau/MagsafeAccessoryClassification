@@ -1,4 +1,4 @@
-result = struct();
+detected = struct();
 
 wSize = 1 * rate;
 
@@ -49,14 +49,27 @@ for cnt = 1:length(data)
             cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
         end
 
-        % Filter 6 : 2초 내 정리
-        cur.filter6 = cur.filter5;
+        cur.filter6 = cur.filter4;
         for cnt3 = find(cur.filter6)'
-            range = cnt3 + (1:wSize*2);
+            range = cnt3 + (-10:10);
+            
             for cnt4 = range
-                cur.filter6(cnt4) = 0;
+                if mag.inferAngle(cnt4) > 0.05
+                    cur.filter(cnt3) = 1;
+                end
             end
         end
+
+
+        % Filter 7 : 2s 내 1개.
+        cur.filter7 = cur.filter6;
+        for cnt3 = find(cur.filter7)'
+            range = cnt3 + (1:wSize*2);
+            for cnt4 = range
+                cur.filter7(cnt4) = 0;
+            end
+        end
+    
 
         detected(cnt).trial(cnt2) = cur;
     end
@@ -65,7 +78,7 @@ end
 figure(2)
 clf
 
-idx = 3;
+idx = 2;
 cur = data(idx);
 
 
@@ -77,21 +90,21 @@ for cnt = 1:length(showTrials)
     mag = cur.trial(showTrials(cnt)).mag;
     acc = cur.trial(showTrials(cnt)).acc;
     gyro = cur.trial(showTrials(cnt)).gyro;
-    
+
     range = 1:length(detected(idx).trial(showTrials(cnt)).filter1);        
-    
+
     subplot(nRow, nCol, cnt)
     hold on
     plot(mag.magnitude)              
     stem(range(detected(idx).trial(showTrials(cnt)).filter1), ...
         mag.magnitude(detected(idx).trial(showTrials(cnt)).filter1), 'LineStyle', 'none');    
-    
+
     if cnt == 1
         title([cur.name, ' (mag > 1)'])
     else
         title('mag > 1')
     end
-    
+
     subplot(nRow, nCol, nCol + cnt)
     hold on
     plot(mag.dAngle)
@@ -112,14 +125,14 @@ for cnt = 1:length(showTrials)
     stem(range(detected(idx).trial(showTrials(cnt)).filter4), ...
         acc.magnitude(detected(idx).trial(showTrials(cnt)).filter4), 'LineStyle', 'none');
     title('acc cfar (.9999)')
-    
+
     subplot(nRow, nCol, 4 * nCol + cnt)    
     hold on
     plot(mag.dAngle)
     plot(gyro.dAngle)
     title('Delta angle')
     legend({'Mag', 'Gyro'})
-        
+
     subplot(nRow, nCol, 5 * nCol + cnt)    
     hold on
 

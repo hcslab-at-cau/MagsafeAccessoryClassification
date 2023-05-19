@@ -24,7 +24,7 @@ for cnt = 1:length(data)
 
                 case 'acc' % Extract the magnitude of high-pass filtered samples         
                     cur.magnitude = sum(filtfilt(b.acc, a.acc, cur.sample).^2, 2);     
-                    
+
                 case 'mag' 
                     cur.dAngle = zeros(length(cur.sample), 1); % Extract the amount of changes in angle
                     for cnt4 = 2:length(cur.sample)
@@ -39,18 +39,21 @@ for cnt = 1:length(data)
         % Infer Magnetometer using gyroscope
         mag = data(cnt).trial(cnt2).('mag');
         gyro = data(cnt).trial(cnt2).('gyro').sample;
-        
+
         lResult = min([length(gyro), length(mag.sample)]);
         refMag = mag.sample(1, :);
-        
+
         mag.inferMag = zeros(lResult, 3);
+        mag.inferMag1s = zeros(lResult, 3);
         mag.diff = zeros(lResult, 3);
-            
+        mag.inferAngle = zeros(lResult, 1);
+
         for t = 2:lResult
             euler = gyro(t, :) * 1/rate;
             rotm = eul2rotm(euler, 'XYZ');
             mag.inferMag(t, :) = (rotm \ (refMag)')';
-            mag.refInferMag(t, :) = (rotm\(mag.sample(t-1, :))')';
+            mag.inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
+            mag.inferAngle(t) = subspace(mag.inferMag1s(t, :)', mag.sample(t, :)');
             refMag = mag.inferMag(t, :);
 
             mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
@@ -59,7 +62,7 @@ for cnt = 1:length(data)
         data(cnt).trial(cnt2).('mag') = mag;
     end
 end
- 
+
 figure(1)
 clf
 accId = 1;
@@ -68,19 +71,19 @@ nCol = 5;
 
 for cnt = 1:5
     cur = data(accId).trial(cnt);
-    
+
     subplot(nRow, nCol, cnt)
     hold on
     plot(cur.gyro.dAngle)
     plot(cur.mag.dAngle)
     title('Delta angle (rads)')
     legend({'gyro', 'mag'})
-    
+
     subplot(nRow, nCol, nCol + cnt)
     plot(cur.mag.magnitude)    
     title('HPF (10Hz) magnitude')
     legend('mag (after HPF)')
-    
+
     subplot(nRow, nCol, 2 * nCol + cnt)
     plot(cur.acc.magnitude)    
     title('HPF (40Hz) magnitude')

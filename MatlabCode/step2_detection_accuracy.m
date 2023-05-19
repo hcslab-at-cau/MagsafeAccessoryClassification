@@ -7,7 +7,9 @@ for cnt = 1:length(data)
     data(cnt).attachCount = 0;
     data(cnt).detachCount = 0;
     for cnt2 = 1:nTrials
-        detect = detected(cnt).trial(cnt2).filter6;
+        detect = detected(cnt).trial(cnt2).filter7;
+        attach = zeros(1, length(detect));
+
         f = data(cnt).name;
         % Attach -> diff  0 -> Other value   : +1
         % Detach -> diff  other value -> 0   : -1
@@ -18,8 +20,16 @@ for cnt = 1:length(data)
         
         lCnt = 1;
         for cnt3 = find(detect)'
-            beforeRange = (-100:-50) + cnt3;
-            afterRange = (50:100) + cnt3;
+            beforeRange = (-150:-50) + cnt3;
+            afterRange = (50:150) + cnt3;
+
+            if beforeRange(1) < 1
+                beforeRange = beforeRange + abs(beforeRange(1)) +1;
+            end
+
+            if afterRange(end) > length(detect)
+                afterRange = afterRange - (afterRange(end)-length(detect));
+            end
             
             beforeData = abs(data(cnt).trial(cnt2).mag.diff(beforeRange, :));
             beforeMean = mean(beforeData(:));

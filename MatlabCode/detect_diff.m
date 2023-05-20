@@ -1,5 +1,5 @@
 accId = 2;
-showTrials = 1:2;
+showTrials = 5:5;
 
 figure(10)
 clf
@@ -8,7 +8,7 @@ nCol = length(showTrials);
 nRow = 5;
 
 for cnt = 1:length(showTrials)
-    detect = detected(accId).trial(showTrials(cnt)).filter6;
+    detect = detected(accId).trial(showTrials(cnt)).filter7;
     mag = data(accId).trial(showTrials(cnt)).mag;
     gyro = data(accId).trial(showTrials(cnt)).gyro;
     corrData = zeros(1, length(detect));

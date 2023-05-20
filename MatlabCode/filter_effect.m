@@ -1,5 +1,5 @@
 accId = 2;
-trials = 1:10;
+trials = 5:5;
 
 nCol = length(trials);
 nRow = 7;
@@ -8,9 +8,9 @@ figure(15)
 clf
 
 for cnt = 1:length(trials)
-    detect = detected(accId).trial(cnt);
-    acc = data(accId).trial(cnt).('acc');
-    mag = data(accId).trial(cnt).('mag');
+    detect = detected(accId).trial(trials(cnt));
+    acc = data(accId).trial(trials(cnt)).('acc');
+    mag = data(accId).trial(trials(cnt)).('mag');
     
     k = 0;
     

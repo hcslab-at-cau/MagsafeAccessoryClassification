@@ -61,10 +61,10 @@ for cnt = 1:length(data)
         end
 
 
-        % Filter 7 : 2s 내 1개.
+        % Filter 7 : 1.5s 내 1개.
         cur.filter7 = cur.filter6;
         for cnt3 = find(cur.filter7)'
-            range = cnt3 + (1:wSize*2);
+            range = cnt3 + (1:wSize);
             for cnt4 = range
                 cur.filter7(cnt4) = 0;
             end
@@ -78,11 +78,11 @@ end
 figure(2)
 clf
 
-idx = 2;
+idx = 7;
 cur = data(idx);
 
 
-showTrials = 1:1;
+showTrials = 8:8;
 nRow = 6;
 nCol = length(showTrials);
 

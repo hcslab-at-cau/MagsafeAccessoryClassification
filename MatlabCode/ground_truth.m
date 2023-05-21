@@ -1,5 +1,5 @@
 magThreshold = 30;
-varThreshold = 1.0;
+varThreshold = 20.0;
 groundTruth = struct();
 
 for cnt = 1:length(data)
@@ -8,7 +8,12 @@ for cnt = 1:length(data)
         filter = diffSum(1:length(diffSum)) > magThreshold;
             
         for cnt3 = find(filter)'
-            range = cnt3 + (-5:5);
+            range = cnt3 + (-10:10);
+
+            if range(end) > length(filter)
+                range = range(1):length(filter);
+            end
+
             if(var(diffSum(range)) > varThreshold)
                 filter(cnt3) = 0;
             end
@@ -18,11 +23,25 @@ for cnt = 1:length(data)
         value.attach = zeros(length(filter), 1);
         value.detach = zeros(length(filter), 1);    
         
-        
         for cnt3 = find(filter)'
-            if(filter(cnt3-1) == 1 && filter(cnt3+1) == 0)
+            if(cnt3 == length(filter))
+                break;
+            end
+            
+            startVal = cnt3 - 100;
+            endVal = cnt3 + 100;
+
+            if startVal < 1
+                startVal = 1;
+            end
+
+            if endVal > length(filter)
+                endVal = length(filter);
+            end
+
+            if(filter(cnt3-1) == 1 && filter(cnt3+1) == 0 && diffSum(startVal) > diffSum(endVal))
                 value.detach(cnt3) = -1;
-            elseif(filter(cnt3-1) == 0 && filter(cnt3+1) == 1)
+            elseif(filter(cnt3-1) == 0 && filter(cnt3+1) == 1 && diffSum(startVal) < diffSum(endVal))
                 value.attach(cnt3) = 1;
             end
         end
@@ -47,6 +66,10 @@ for cnt = 1:length(data)
         value.filter = filter;
         value.attachCount = length(find(value.attach));
         value.detachCount = length(find(value.detach));
+
+        if(value.attachCount ~= 5 || value.detachCount ~= 5)
+            disp({cnt, cnt2})
+        end
         
         groundTruth(cnt).trial(cnt2) = value;
     end
@@ -55,8 +78,8 @@ end
 figure(25)
 clf
 
-accId = 1;
-trials = 1:5;
+accId = 6;
+trials = 5:5;
 
 nRows = 4;
 nCols = length(trials);
@@ -84,5 +107,5 @@ for cnt = 1:length(trials)
 
     subplot(nRows, nCols, nCols*3 + cnt)
     plot(filter)
-    title('filter')
+    title('groundTruth filter')
 end

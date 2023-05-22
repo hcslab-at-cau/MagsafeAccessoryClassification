@@ -77,7 +77,7 @@ end
 figure(2)
 clf
 
-idx = 6;
+idx = 1;
 cur = data(idx);
 
 showTrials = 4:4;

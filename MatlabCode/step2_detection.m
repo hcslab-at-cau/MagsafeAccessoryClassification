@@ -36,14 +36,23 @@ for cnt = 1:length(data)
         % Filter 4 : There should be sudden variation in the magnitude of acc
         cur.filter4 = cur.filter3;
         for cnt3 = find(cur.filter4)'
-            range = cnt3 + (-wSize:-1);
-            cur.filter4(cnt3) = func_CFAR(acc.magnitude(range), ...
-                acc.magnitude(cnt3), cfarThreshold);
+            range = cnt3 + (-10:10);
+            
+            for cnt4 = range
+                if(func_CFAR(acc.magnitude(range), acc.magnitude(cnt4), cfarThreshold))
+                    cur.filter(cnt3) = 1;
+                    break;
+                end
+            end
+            
+            
+            % cur.filter4(cnt3) = func_CFAR(acc.magnitude(range), ...
+            %     acc.magnitude(cnt3), cfarThreshold);
         end
 
         % Filter 5 : the delta angles measured from mag and gyro should be
         % different to each other
-        cur.filter5 = cur.filter3;
+        cur.filter5 = cur.filter4;
         for cnt3 = find(cur.filter5)'
             range = cnt3 + 1 + (-wSize:-1);
             cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
@@ -53,7 +62,7 @@ for cnt = 1:length(data)
         % Filter 6 : angle > 0.05
         cur.filter6 = cur.filter4;
         for cnt3 = find(cur.filter6)'
-            range = cnt3 + (-20:20);
+            range = cnt3 + (-wSize/2:wSize/2);
             
             if(max(mag.inferAngle(range)) < 0.05)
                 cur.filter6(cnt3) = 0;
@@ -68,19 +77,18 @@ for cnt = 1:length(data)
                 cur.filter7(cnt4) = 0;
             end
         end
-    
 
         detected(cnt).trial(cnt2) = cur;
     end
 end
 
-figure(2)
+figure(55)
 clf
 
-idx = 1;
+idx = 2;
 cur = data(idx);
 
-showTrials = 4:4;
+showTrials = 6:6;
 nRow = 6;
 nCol = length(showTrials);
 

@@ -46,6 +46,7 @@ for cnt = 1:length(data)
         mag.inferMag = zeros(lResult, 3);
         mag.inferMag1s = zeros(lResult, 3);
         mag.diff = zeros(lResult, 3);
+        mag.diffSum = zeros(lResult, 1);
         mag.inferAngle = zeros(lResult, 1);
 
         for t = 2:lResult
@@ -57,6 +58,7 @@ for cnt = 1:length(data)
             refMag = mag.inferMag(t, :);
 
             mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
+            mag.diffSum(t) = sqrt(sum(power(mag.diff(t, :), 2)));
         end
 
         data(cnt).trial(cnt2).('mag') = mag;

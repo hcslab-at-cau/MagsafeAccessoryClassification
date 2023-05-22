@@ -4,9 +4,9 @@
 % It can be use to environment where has no ferromagnetic.
 
 % 1 for attach, 2 for detach
-truePositive = zeros(2, length(data));
-falsePositive = zeros(1, length(data));
-acc = strings(1, length(data));
+truePositive = zeros(2, length(data)+1);
+falsePositive = zeros(1, length(data)+1);
+acc = strings(1, length(data)+1);
 
 for cnt = 1:length(data)
     truePositive(1, cnt) = detectList(cnt).tpCount(1)/50 * 100;
@@ -15,6 +15,11 @@ for cnt = 1:length(data)
     falsePositive(cnt) = detectList(cnt).fpCount;
     acc(cnt) = data(cnt).name;
 end
+
+truePositive(1, end) = mean(truePositive(1, 1:length(data)));
+truePositive(2, end) = mean(truePositive(2, 1:length(data)));
+falsePositive(1, end) = mean(falsePositive(1, 1:length(data)));
+acc(end) = "Total Mean";
 
 figure(5)
 clf

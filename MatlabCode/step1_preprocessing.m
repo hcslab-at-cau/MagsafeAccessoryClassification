@@ -38,9 +38,9 @@ for cnt = 1:length(data)
 
         % Infer Magnetometer using gyroscope
         mag = data(cnt).trial(cnt2).('mag');
-        gyro = data(cnt).trial(cnt2).('gyro').sample;
+        gyro = data(cnt).trial(cnt2).('gyro');
 
-        lResult = min([length(gyro), length(mag.sample)]);
+        lResult = min([length(gyro.sample), length(mag.sample)]);
         refMag = mag.sample(1, :);
 
         mag.inferMag = zeros(lResult, 3);
@@ -48,10 +48,10 @@ for cnt = 1:length(data)
         mag.diff = zeros(lResult, 3);
         mag.diffSum = zeros(lResult, 1);
         mag.inferAngle = zeros(lResult, 1);
-        corrData = zeros(lResult, 1);
+        corrData = zeros(2, lResult);
 
         for t = 2:lResult
-            euler = gyro(t, :) * 1/rate;
+            euler = gyro.sample(t, :) * 1/rate;
             rotm = eul2rotm(euler, 'XYZ');
             mag.inferMag(t, :) = (rotm \ (refMag)')';
             mag.inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
@@ -66,8 +66,9 @@ for cnt = 1:length(data)
         interval = 10;
 
         for t = interval + 1:lResult-interval
-            range = t - interval + 1:t+interval;
-            corrData(t) = corr(mag.dAngle(range), mag.inferAngle(range));
+            range = t + (-interval:interval);
+            corrData(1, t) = corr(mag.dAngle(range), mag.inferAngle(range));
+            corrData(2, t) = corr(mag.dAngle(range), gyro.dAngle(range));
         end
         
         data(cnt).trial(cnt2).corr = corrData;

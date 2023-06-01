@@ -5,14 +5,14 @@ figure(14)
 clf
 
 nCol = length(showTrials);
-nRow = 6;
+nRow = 8;
 threshold = 0.5;
 
 for cnt = 1:length(showTrials)
     detect = detected(accId).trial(showTrials(cnt)).filter7;
     mag = data(accId).trial(showTrials(cnt)).mag;
     gyro = data(accId).trial(showTrials(cnt)).gyro;
-    corrData = zeros(1, length(detect));
+    corrData = data(accId).trial(showTrials(cnt)).corr;
     mulData = zeros(1, length(detect));
     % corrData = zeros(4, length(detect));
     % corrDataFilter = zeros(2, length(detect));
@@ -46,40 +46,51 @@ for cnt = 1:length(showTrials)
 
     interval = 10;
 
-    for cnt2 = interval + 1:length(detect)-10
-        curRange = cnt2 - 10 + 1:cnt2+10;
-
-        corrData(cnt2) = corr(mag.dAngle(curRange), mag.inferAngle(curRange));
-        
-    end
+    % for cnt2 = interval + 1:length(detect)-10
+    %     curRange = cnt2 - 10 + 1:cnt2+10;
+    % 
+    %     corrData(cnt2) = corr(mag.dAngle(curRange), mag.inferAngle(curRange));
+    % 
+    % end
 
     for cnt2 = 1:length(detect)
         mulData(cnt2) = mag.dAngle(cnt2) * mag.inferAngle(cnt2);
     end
 
     subplot(nRow, nCol, cnt)
-    plot(corrData)
+    plot(corrData(1, :))
     title('corrData')
 
     subplot(nRow, nCol, nCol + cnt)
+    plot(corrData(2, :))
+    title('corrData original')
+
+    subplot(nRow, nCol, nCol * 2 + cnt)
     plot(mulData)
     title('mul')
 
-    subplot(nRow, nCol, nCol* 2 + cnt)
+    subplot(nRow, nCol, nCol* 3 + cnt)
     plot(mag.sample)
     title('Sample')
 
-    subplot(nRow, nCol, nCol * 3 + cnt)
+    subplot(nRow, nCol, nCol * 4 + cnt)
     plot(mag.inferAngle)
     title('infer angle')
 
-    subplot(nRow, nCol, nCol * 4 + cnt)
-    plot(mag.dAngle)
-    title('dAngle')
-
     subplot(nRow, nCol, nCol * 5 + cnt)
+    plot(mag.dAngle)
+    title('mag dAngle')
+
+
+    subplot(nRow, nCol, nCol * 6 + cnt)
+    plot(gyro.dAngle)
+    title('gyro dAngle')
+
+
+    subplot(nRow, nCol, nCol * 7 + cnt)
     plot(detect)
     title('Filter')
+    
 
     % subplot(nRow, nCol, cnt)
     % hold on

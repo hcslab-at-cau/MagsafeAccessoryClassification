@@ -55,9 +55,12 @@ for cnt = 1:length(data)
         % different to each other
         cur.filter5 = cur.filter4;
         for cnt3 = find(cur.filter5)'
-            %range = cnt3 + 1 + (-wSize:-1);
-            cur.filter5(cnt3) = corrData(cnt3) > 0.8;
-            %cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
+            % range = cnt3 + 1 + (-wSize:-1);
+            
+            
+            cur.filter5(cnt3) = corrData(1, cnt3) > 0.8;
+            % range = cnt3-10 + 1:cnt3+10;
+            % cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) > corrThreshold;
         end
 
 

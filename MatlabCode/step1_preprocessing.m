@@ -13,7 +13,7 @@ wSize = 1 * rate;
 
 for cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
-
+    
     for cnt2 = 1:nTrials
         for cnt3 = 1:length(sensors)
             cur = data(cnt).trial(cnt2).(char(sensors(cnt3)));
@@ -48,6 +48,7 @@ for cnt = 1:length(data)
         mag.diff = zeros(lResult, 3);
         mag.diffSum = zeros(lResult, 1);
         mag.inferAngle = zeros(lResult, 1);
+        corrData = zeros(lResult, 1);
 
         for t = 2:lResult
             euler = gyro(t, :) * 1/rate;
@@ -59,8 +60,17 @@ for cnt = 1:length(data)
 
             mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
             mag.diffSum(t) = sqrt(sum(power(mag.diff(t, :), 2)));
+    
         end
 
+        interval = 10;
+
+        for t = interval + 1:lResult-interval
+            range = t - interval + 1:t+interval;
+            corrData(t) = corr(mag.dAngle(range), mag.inferAngle(range));
+        end
+        
+        data(cnt).trial(cnt2).corr = corrData;
         data(cnt).trial(cnt2).('mag') = mag;
     end
 end
@@ -71,7 +81,7 @@ accId = 1;
 nRow = 3;
 nCol = 5;
 
-for cnt = 1:5
+for cnt = 1:4
     cur = data(accId).trial(cnt);
 
     subplot(nRow, nCol, cnt)

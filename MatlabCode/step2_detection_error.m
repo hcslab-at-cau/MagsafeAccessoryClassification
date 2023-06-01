@@ -58,8 +58,8 @@ end
 figure(35)
 clf
 
-accId = 6;
-trials = 8:8;
+accId = 3;
+trials = 1:1;
 
 nRows = 4;
 nCols = length(trials);

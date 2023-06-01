@@ -1,22 +1,29 @@
-% Detach는 attach가 안 일어나면 일어나지 않은 event 라 생각.
+prevRanges = (-100:-1);
+nextRanges = (1:50);
+extractRanges = (-100:50);
+
+features = struct();
 
 for cnt = 1:length(data)
     for cnt2 = 1:nTrials
-        state = false;
-        detect = detected(cnt).trial(cnt2).filter6;
+        detect = detected(cnt).trial(cnt2).filter7;
+        mag = data(cnt).trial.mag;
+        gyro = data(cnt).trial.gyro;
 
+        cur = struct();
+        
         for cnt3 = find(detect)'
-            if state == false
-                state = true;
+            prev = cnt3 + prevRanges;
+            next = cnt3 + nextRanges;
 
-                
-            else
-                state = false;
-            end
+            cur.mag = mag.sample(extractRanges, :);
+            cur.gyro = gyro.sample(extractRanges, :);
+            
+            
 
 
         end
-        
+        features(cnt).trial(cnt2) = cur;
     end
 
 end

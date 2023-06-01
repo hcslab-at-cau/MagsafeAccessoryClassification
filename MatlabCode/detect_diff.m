@@ -1,7 +1,7 @@
-accId = 2;
-showTrials = 5:5;
+accId = 1;
+showTrials =2:4;
 
-figure(10)
+figure(9)
 clf
 
 nCol = length(showTrials);
@@ -37,9 +37,9 @@ for cnt = 1:length(showTrials)
 
     subplot(nRow, nCol, nCol*3 + cnt)
     hold on
-    plot(corrData)
+    plot(detect)
     %stem(range(detect), corrData(detect), 'LineStyle','none')
-    title('Correlation')
+    title('detect filter7')
 
     subplot(nRow, nCol, nCol*4+ cnt)
     plot(mag.inferAngle)

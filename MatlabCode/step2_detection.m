@@ -12,6 +12,7 @@ for cnt = 1:length(data)
         mag = data(cnt).trial(cnt2).mag;
         acc = data(cnt).trial(cnt2).acc;
         gyro = data(cnt).trial(cnt2).gyro;
+        corrData = data(cnt).trial(cnt2).corr;
 
         lResult = min([length(mag.magnitude), length(acc.magnitude), ...
             length(mag.dAngle), length(gyro.dAngle)]);
@@ -36,8 +37,8 @@ for cnt = 1:length(data)
         % Filter 4 : There should be sudden variation in the magnitude of acc
         cur.filter4 = cur.filter3;
         for cnt3 = find(cur.filter4)'
-            range = cnt3 + (-10:10);
-            
+            range = cnt3 + (-5:5);
+
             for cnt4 = range
                 if(func_CFAR(acc.magnitude(range), acc.magnitude(cnt4), cfarThreshold))
                     cur.filter(cnt3) = 1;
@@ -54,23 +55,24 @@ for cnt = 1:length(data)
         % different to each other
         cur.filter5 = cur.filter4;
         for cnt3 = find(cur.filter5)'
-            range = cnt3 + 1 + (-wSize:-1);
-            cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
+            %range = cnt3 + 1 + (-wSize:-1);
+            cur.filter5(cnt3) = corrData(cnt3) > 0.8;
+            %cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) < corrThreshold;
         end
 
 
-        % Filter 6 : angle > 0.05
+        % Filter 6 : angle > 0.02
         cur.filter6 = cur.filter4;
         for cnt3 = find(cur.filter6)'
-            range = cnt3 + (-wSize/2:wSize/2);
+            range = cnt3 + (-wSize/4:wSize/4);
             
-            if(max(mag.inferAngle(range)) < 0.05)
+            if(max(mag.inferAngle(range)) < 0.02)
                 cur.filter6(cnt3) = 0;
             end
         end
 
         % Filter 7 : 1s 내 1개.
-        cur.filter7 = cur.filter6;
+        cur.filter7 = cur.filter5;
         for cnt3 = find(cur.filter7)'
             range = cnt3 + (1:wSize);
             for cnt4 = range
@@ -88,7 +90,7 @@ clf
 idx = 2;
 cur = data(idx);
 
-showTrials = 6:6;
+showTrials =1:1;
 nRow = 6;
 nCol = length(showTrials);
 
@@ -139,20 +141,20 @@ for cnt = 1:length(showTrials)
     title('Delta angle')
     legend({'Mag', 'Gyro'})
 
-    subplot(nRow, nCol, 5 * nCol + cnt)    
-    hold on
-
-    corrData = zeros(1, length(range));
-    for cnt2 = wSize + 1:length(corrData)
-        curRange = cnt2 - wSize + 1:cnt2;
-        corrData(cnt2) = corr(mag.dAngle(curRange), gyro.dAngle(curRange));
-    end    
-    plot(corrData)
-
-    if sum(detected(idx).trial(showTrials(cnt)).filter5 > 0)
-        stem(range(detected(idx).trial(showTrials(cnt)).filter5), ...
-            corrData(detected(idx).trial(showTrials(cnt)).filter5), ...
-            'LineStyle', 'none');
-    end
-    title('corr < .5')
+    % subplot(nRow, nCol, 5 * nCol + cnt)    
+    % hold on
+    % 
+    % corrData = zeros(1, length(range));
+    % for cnt2 = wSize + 1:length(corrData)
+    %     curRange = cnt2 - wSize + 1:cnt2;
+    %     corrData(cnt2) = corr(mag.dAngle(curRange), gyro.dAngle(curRange));
+    % end    
+    % plot(corrData)
+    % 
+    % if sum(detected(idx).trial(showTrials(cnt)).filter5 > 0)
+    %     stem(range(detected(idx).trial(showTrials(cnt)).filter5), ...
+    %         corrData(detected(idx).trial(showTrials(cnt)).filter5), ...
+    %         'LineStyle', 'none');
+    % end
+    % title('corr < .5')
 end

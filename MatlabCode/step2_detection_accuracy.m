@@ -18,10 +18,10 @@ end
 
 truePositive(1, end) = mean(truePositive(1, 1:length(data)));
 truePositive(2, end) = mean(truePositive(2, 1:length(data)));
-falsePositive(1, end) = mean(falsePositive(1, 1:length(data)));
+falsePositive(1, end) = sum(falsePositive(1, 1:length(data)));
 acc(end) = "Total Mean";
 
-figure(5)
+figure(10)
 clf
 
 nRows = 1;
@@ -43,7 +43,7 @@ title('detach accuracy')
 
 subplot(nRows, nCols, 3);
 bar(falsePositive)
-ylim([0, 10])
+ylim([0, 50])
 grid on;
 xticklabels(acc);
 title('False postive')

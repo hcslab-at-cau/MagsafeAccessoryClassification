@@ -55,6 +55,9 @@ for cnt = 1:length(data)
             rotm = eul2rotm(euler, 'XYZ');
             mag.inferMag(t, :) = (rotm \ (refMag)')';
             mag.inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
+            
+            % infer Angle --> angle between inferred mag and real mag
+            % inferred mag --> using prev 0.01s mag and gyroscope.
             mag.inferAngle(t) = subspace(mag.inferMag1s(t, :)', mag.sample(t, :)');
             refMag = mag.inferMag(t, :);
 
@@ -63,7 +66,7 @@ for cnt = 1:length(data)
     
         end
 
-        interval = 10;
+        interval = 5;
 
         for t = interval + 1:lResult-interval
             range = t + (-interval:interval);

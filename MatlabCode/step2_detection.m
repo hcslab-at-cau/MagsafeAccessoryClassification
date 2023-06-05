@@ -54,24 +54,14 @@ for cnt = 1:length(data)
         % Filter 5 : the delta angles measured from mag and gyro should be
         % different to each other
         cur.filter5 = cur.filter4;
-        for cnt3 = find(cur.filter5)'
+        cur.filter6 = cur.filter4;
+        for cnt3 = find(cur.filter4)'
             % range = cnt3 + 1 + (-wSize:-1);
             
-            
-            cur.filter5(cnt3) = corrData(1, cnt3) > 0.8;
+            cur.filter5(cnt3) = corrData(1, cnt3) > 0.9;
+            cur.filter6(cnt3) = corrData(2, cnt3) > 0.5;
             % range = cnt3-10 + 1:cnt3+10;
             % cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) > corrThreshold;
-        end
-
-
-        % Filter 6 : angle > 0.02
-        cur.filter6 = cur.filter4;
-        for cnt3 = find(cur.filter6)'
-            range = cnt3 + (-wSize/4:wSize/4);
-            
-            if(max(mag.inferAngle(range)) < 0.02)
-                cur.filter6(cnt3) = 0;
-            end
         end
 
         % Filter 7 : 1s 내 1개.
@@ -83,6 +73,14 @@ for cnt = 1:length(data)
             end
         end
 
+        cur.filter8 = cur.filter6;
+        for cnt3 = find(cur.filter8)'
+            range = cnt3 + (1:wSize);
+            for cnt4 = range
+                cur.filter8(cnt4) = 0;
+            end
+        end
+
         detected(cnt).trial(cnt2) = cur;
     end
 end
@@ -90,7 +88,7 @@ end
 figure(55)
 clf
 
-idx = 2;
+idx = 1;
 cur = data(idx);
 
 showTrials =1:1;

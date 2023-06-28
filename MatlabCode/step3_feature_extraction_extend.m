@@ -1,6 +1,6 @@
 rotOrder = 'XYZ';
 
-extractInterval = [-wSize / 2, wSize / 4];
+extractInterval = (-wSize:wSize);
 feature = struct();
 for cnt = 1:length(data)
     feature(cnt).name = data(cnt).name;
@@ -8,7 +8,7 @@ for cnt = 1:length(data)
 
     for cnt2 = 1:nTrials
         cur = struct();
-        filter = detected(cnt).trial(cnt2).filter7;    
+        filter = detected(cnt).trial(cnt2).filter6;    
         mag = data(cnt).trial(cnt2).mag;
         gyro = data(cnt).trial(cnt2).gyro;
         filterIdx = find(filter);
@@ -25,7 +25,7 @@ for cnt = 1:length(data)
             end
 
             if cur(cnt3).extractRange(end) > length(filter)
-                cur(cnt3).extractRange = cur(cnt3).extractRange(start):length(filter);
+                cur(cnt3).extractRange = cur(cnt3).extractRange(1):length(filter);
             end
 
             cur(cnt3).euler = sum(gyro.sample(cur(cnt3).extractRange, :))* 1/rate;

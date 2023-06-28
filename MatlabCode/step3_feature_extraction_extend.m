@@ -2,9 +2,14 @@ rotOrder = 'XYZ';
 
 extractInterval = (-wSize:wSize);
 feature = struct();
+values = struct();
+
 for cnt = 1:length(data)
+    value = [];
     feature(cnt).name = data(cnt).name;
+    values(cnt).name = data(cnt).name;
     nTrials = length(data(cnt).trial);
+    k = 1;
 
     for cnt2 = 1:nTrials
         cur = struct();
@@ -36,10 +41,11 @@ for cnt = 1:length(data)
             cur(cnt3).diff = cur(cnt3).mags(2, :) - cur(cnt3).mags(1, :);
             cur(cnt3).m = sqrt(sum(cur(cnt3).diff.^2));
             
+            value = [value;cur(cnt3).diff];
+            k = k + 1;
         end
         
         feature(cnt).trial(cnt2).cur = cur;
     end
-
-
+    values(cnt).feature = value;
 end

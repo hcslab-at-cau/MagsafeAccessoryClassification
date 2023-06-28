@@ -79,29 +79,29 @@ for cnt = 1:length(data)
     end
 end
 
-figure(1)
-clf
-accId = 1;
-nRow = 3;
-nCol = 5;
-
-for cnt = 1:4
-    cur = data(accId).trial(cnt);
-
-    subplot(nRow, nCol, cnt)
-    hold on
-    plot(cur.gyro.dAngle)
-    plot(cur.mag.dAngle)
-    title('Delta angle (rads)')
-    legend({'gyro', 'mag'})
-
-    subplot(nRow, nCol, nCol + cnt)
-    plot(cur.mag.magnitude)    
-    title('HPF (10Hz) magnitude')
-    legend('mag (after HPF)')
-
-    subplot(nRow, nCol, 2 * nCol + cnt)
-    plot(cur.acc.magnitude)    
-    title('HPF (40Hz) magnitude')
-    legend('acc (after HPF)')
-end
+% figure(1)
+% clf
+% accId = 1;
+% nRow = 3;
+% nCol = 5;
+% 
+% for cnt = 1:4
+%     cur = data(accId).trial(cnt);
+% 
+%     subplot(nRow, nCol, cnt)
+%     hold on
+%     plot(cur.gyro.dAngle)
+%     plot(cur.mag.dAngle)
+%     title('Delta angle (rads)')
+%     legend({'gyro', 'mag'})
+% 
+%     subplot(nRow, nCol, nCol + cnt)
+%     plot(cur.mag.magnitude)    
+%     title('HPF (10Hz) magnitude')
+%     legend('mag (after HPF)')
+% 
+%     subplot(nRow, nCol, 2 * nCol + cnt)
+%     plot(cur.acc.magnitude)    
+%     title('HPF (40Hz) magnitude')
+%     legend('acc (after HPF)')
+% end

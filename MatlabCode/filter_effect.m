@@ -1,13 +1,11 @@
-accId = 3;
-trials = 10:10;
+accId = 1;
+trials = 1:3;
 
 nCol = length(trials);
-nRow = 7;
+nRow = 6;
 
 figure(15)
 clf
-
-[b, a] = butter(order, 10/rate * 2, 'high');
 
 for cnt = 1:length(trials)
     detect = detected(accId).trial(trials(cnt));
@@ -16,6 +14,11 @@ for cnt = 1:length(trials)
     corrData = data(accId).trial(trials(cnt)).corr;
     
     k = 0;
+
+    subplot(nRow, nCol, nCol * k + cnt)
+    plot(detect.filter1)
+    title('filter 1')
+    k = k + 1;
     
     subplot(nRow, nCol, nCol * k + cnt)
     plot(detect.filter2)
@@ -42,10 +45,10 @@ for cnt = 1:length(trials)
     title('filter 6')
     k = k + 1;
 
-    subplot(nRow, nCol, nCol * k + cnt);
-    plot(detect.filter7)
-    title('filter 7')
-    k = k +1;
+    % subplot(nRow, nCol, nCol * k + cnt);
+    % plot(detect.filter7)
+    % title('filter 7')
+    % k = k +1;
 
     % subplot(nRow, nCol, nCol * k + cnt)
     % plot(mag.inferAngle)
@@ -58,8 +61,8 @@ for cnt = 1:length(trials)
     % title('Angle between infermag hpf ')
     % k = k +1;
 
-    subplot(nRow, nCol, nCol * k + cnt)
-    plot(corrData)
-    title('corr ')
+    % subplot(nRow, nCol, nCol * k + cnt)
+    % plot(corrData)
+    % title('corr ')
     
 end

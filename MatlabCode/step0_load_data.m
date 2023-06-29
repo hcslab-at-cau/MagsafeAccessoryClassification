@@ -1,6 +1,8 @@
 clear;
 
-path.root = '../Data/Default_dataset/Jaemin7';
-path.postfix = 'Normal_objects';
+path = '../Data/Default_dataset/Jaemin6';
 
-data = load_data(path.root, path.postfix);
+c = {'Normal_objects', 'Holders'};
+postfix = char(c);
+
+data = load_data(path, postfix);

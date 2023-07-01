@@ -1,5 +1,5 @@
-accId = 1;
-showTrials =2:4;
+accId = 4;
+showTrials =1:1;
 
 figure(9)
 clf
@@ -8,15 +8,10 @@ nCol = length(showTrials);
 nRow = 5;
 
 for cnt = 1:length(showTrials)
-    detect = detected(accId).trial(showTrials(cnt)).filter7;
+    detect = detected(accId).trial(showTrials(cnt)).filter6;
     mag = data(accId).trial(showTrials(cnt)).mag;
     gyro = data(accId).trial(showTrials(cnt)).gyro;
-    corrData = zeros(1, length(detect));
-
-    for cnt2 = wSize + 1:length(corrData)
-        curRange = cnt2 - wSize + 1:cnt2;
-        corrData(cnt2) = corr(mag.dAngle(curRange), gyro.dAngle(curRange));
-    end  
+    corrData = data(accId).trial(showTrials(cnt)).corr(1, :);
 
     subplot(nRow, nCol, cnt)
     hold on
@@ -39,7 +34,7 @@ for cnt = 1:length(showTrials)
     hold on
     plot(detect)
     %stem(range(detect), corrData(detect), 'LineStyle','none')
-    title('detect filter7')
+    title('detect filter6')
 
     subplot(nRow, nCol, nCol*4+ cnt)
     plot(mag.inferAngle)

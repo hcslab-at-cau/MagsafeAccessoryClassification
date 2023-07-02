@@ -2,15 +2,15 @@ rotOrder = 'XYZ';
 
 extractInterval = (-wSize:wSize);
 feature = struct();
-values = struct();
-values2 = struct();
+% values = struct();
+% values2 = struct();
 
 for cnt = 1:length(data)
-    value = [];
-    value2 = [];
+    % value = [];
+    % value2 = [];
     feature(cnt).name = data(cnt).name;
-    values(cnt).name = data(cnt).name;
-    values2(cnt).name = data(cnt).name;
+    % values(cnt).name = data(cnt).name;
+    % values2(cnt).name = data(cnt).name;
     nTrials = length(data(cnt).trial);
     k = 1;
 
@@ -54,8 +54,8 @@ for cnt = 1:length(data)
             diff2 = mags(3, :) - mags(2, :);
             m = sqrt(sum(diff.^2));
             
-            value = [value;diff];
-            value2 = [value2;diff2];
+            % value = [value;diff];
+            % value2 = [value2;diff2];
             k = k + 1;
 
             cur(cnt3).startIdx = baseIdx;
@@ -70,6 +70,6 @@ for cnt = 1:length(data)
         
         feature(cnt).trial(cnt2).cur = cur;
     end
-    values(cnt).feature = value;
-    values2(cnt).feature = value2;
+    % values(cnt).feature = value;
+    % values2(cnt).feature = value2;
 end

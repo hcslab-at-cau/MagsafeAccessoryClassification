@@ -2,15 +2,9 @@ rotOrder = 'XYZ';
 
 extractInterval = (-wSize:wSize);
 feature = struct();
-% values = struct();
-% values2 = struct();
 
 for cnt = 1:length(data)
-    % value = [];
-    % value2 = [];
     feature(cnt).name = data(cnt).name;
-    % values(cnt).name = data(cnt).name;
-    % values2(cnt).name = data(cnt).name;
     nTrials = length(data(cnt).trial);
     k = 1;
 
@@ -33,10 +27,12 @@ for cnt = 1:length(data)
             if range(end) > lResult
                 range = range(1):lResult;
             end
-
+            
+            % Sum of gyro calculation
             euler = sum(gyro.sample(range, :))* 1/rate;
             rotm = eul2rotm(euler, rotOrder);
             
+            % gyro 1 sample calculation
             refMag = mag.sample(range(1)-1, :);
             inferredMag = zeros(1, 3);
             for cnt4 = range
@@ -47,6 +43,7 @@ for cnt = 1:length(data)
                 refMag = inferredMag;
             end
 
+            % 1 : 201 sample, 2 : 1 sample, 3 : Real value
             mags(1, :) = (rotm \ mag.sample(range(1)-1, :)')';
             mags(2, :) = inferredMag;
             mags(3, :) = mag.sample(range(end), :);
@@ -54,8 +51,6 @@ for cnt = 1:length(data)
             diff2 = mags(3, :) - mags(2, :);
             m = sqrt(sum(diff.^2));
             
-            % value = [value;diff];
-            % value2 = [value2;diff2];
             k = k + 1;
 
             cur(cnt3).startIdx = baseIdx;
@@ -70,6 +65,4 @@ for cnt = 1:length(data)
         
         feature(cnt).trial(cnt2).cur = cur;
     end
-    % values(cnt).feature = value;
-    % values2(cnt).feature = value2;
 end

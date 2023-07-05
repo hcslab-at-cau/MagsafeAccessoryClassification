@@ -1,69 +1,26 @@
-accId = 1;
-trials = 10:10;
+accId = 4;
+trial = 6;
 
-nCol = length(trials);
-nRow = 7;
+nCol = 1;
+nRow = 1;
 
 figure(21)
 clf
 
-for cnt = 1:length(trials)
-    objectName = data(accId).name;
-    cur = data(accId).trial(trials(cnt));
+detect = detected(accId).trial(trial).filter6;
+mag = data(accId).trial(trial).mag;
+gyro = data(accId).trial(trial).gyro;
+corrData = data(accId).trial(trial).corr(1, :);
 
-    mag = cur.mag;
-    magValue = mag.sample(:, 2)';
-    gyro = cur.gyro;
-    detect = detected(accId).trial(trials(cnt)).filter7;
-    diff = mag.diff;
-    corrData = cur.corr(1, :);
-    
-    subplot(nRow, nCol, cnt)
-    hold on
-    plot(mag.sample)
-    legend('x', 'y', 'z')
-    if(cnt == 1)
-        title(objectName)
-    else
-        title('magnetometer')
-    end
-    
+ranges = 1:450;
 
-    subplot(nRow, nCol, nCol + cnt)
-    hold on
-    plot(detect)
-    title('Detect Filter')
+samples = mag.sample(ranges, :);
+detects = detect(ranges);
 
-    subplot(nRow, nCol, nCol*2 + cnt)
-    hold on
-    plot(corrData)
-    title('Detect Filter')
-    
-    subplot(nRow, nCol, nCol*3 + cnt)
-    hold on
-    stem(find(corrData > 0.9), magValue(corrData > 0.9), 'LineStyle','none')
-    plot(magValue)
-    legend('corr', 'y')
-    title('sample with corr > 0.9')
-
-    subplot(nRow, nCol, nCol*4 + cnt)
-    hold on
-    stem(find(detect), mag.sample(detect), 'LineStyle','none')
-    plot(mag.sample)
-    legend('filter', 'x', 'y', 'z')
-    title('sample with detect filter')
-
-    subplot(nRow, nCol, nCol*5 + cnt)
-    hold on
-    stem(find(corrData > 0.9), mag.diff(corrData > 0.9), 'LineStyle','none')
-    plot(mag.diff)
-    legend('corr', 'x', 'y', 'z')
-    title('sample with corr > 0.9 in diff')
-
-    subplot(nRow, nCol, nCol*6 + cnt)
-    hold on
-    stem(find(detect), mag.diff(detect), 'LineStyle','none')
-    plot(mag.diff)
-    legend('filter', 'x', 'y', 'z')
-    title('sample with detect filter in diff')
-end
+subplot(nRow, nCol, 1)
+hold on
+plot(samples)
+stem(find(detects), samples(detects), 'LineStyle','none')
+legend('x', 'y', 'z')
+%xticks([])
+yticks([])

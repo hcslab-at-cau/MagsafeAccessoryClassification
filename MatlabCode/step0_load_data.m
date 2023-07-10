@@ -3,7 +3,7 @@ clear;
 rawInclude = true;
 path = '../Data/';
 datasetName = 'default_dataset';
-folderName = 'jaemin7';
+folderName = 'jaemin6';
 
 path = [path, datasetName, '/', folderName];
 

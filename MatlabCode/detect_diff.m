@@ -1,6 +1,6 @@
-accId = 12;
-showTrials = [9, 10];
-threshold = 65;
+accId = 6;
+showTrials = 10:10;
+threshold = 45;
 
 gt = struct();
 for cnt = 1:nTrials

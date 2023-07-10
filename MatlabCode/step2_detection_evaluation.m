@@ -12,10 +12,15 @@ for cnt = 1:length(data)
         attachCnt = 0;
         detachCnt = 0;    
         totalDetection = length(find(detected(cnt).trial(cnt2).filter6));
+        maxLength = length(detected(cnt).trial(cnt2).filter6);
 
         for t = 1:length(detectTimes)
             detectGroundTruth = detectTimes(t);
             range = detectGroundTruth + wRange;
+
+            if range(end) > maxLength
+                range = range(1):maxLength;
+            end
             
             if max(detected(cnt).trial(cnt2).filter6(range)) == 1 % detect occured in both estimated and ground-truth   
                 if mod(t,2) == 1 % attach

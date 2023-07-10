@@ -64,12 +64,13 @@ for cnt = 1:length(data)
             % cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) > corrThreshold;
         end
 
-        % Filter 6 : 1s 내 1개.
+        % Filter 6 : 0.5s 내 1개.
         cur.filter6 = cur.filter5;
         for cnt3 = find(cur.filter6)'
-            range = cnt3 + (1:wSize);
-            for cnt4 = range
-                cur.filter6(cnt4) = 0;
+            range = cnt3 + (-wSize/2:-1);
+            
+            if max(cur.filter6(range)) == 1
+                cur.filter6(cnt3) = 0;
             end
         end
 

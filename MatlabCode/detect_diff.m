@@ -1,15 +1,8 @@
-accId = 7;
-showTrials =8:8;
-threshold = 70;
+accId = 12;
+showTrials = [9, 10];
+threshold = 65;
 
-figure(9)
-clf
-
-nCol = length(showTrials);
-nRow = 2;
-disp(data(accId).name)
-
-
+gt = struct();
 for cnt = 1:nTrials
     tmp = data(accId).trial(cnt);
     diff = tmp.mag.diff;
@@ -28,19 +21,25 @@ for cnt = 1:nTrials
             groundTruthFilter(cnt2) = 1;
             count = count +1;
         end
-
     end
     if count ~= 10
         disp(cnt)
     end
-
+    
+    k = 1;
     for cnt2 = find(groundTruthFilter)'
-        
+        gt(k).(['value_', num2str(cnt)]) = cnt2;
+        k = k+1;
     end
-
-    gt = find(groundTruthFilter);
 end
 
+
+figure(9)
+clf
+
+nCol = length(showTrials);
+nRow = 4;
+disp(data(accId).name)
 
 
 for cnt = 1:length(showTrials)
@@ -63,4 +62,11 @@ for cnt = 1:length(showTrials)
     subplot(nRow, nCol, nCol + cnt)
     plot(diffFilter)
     
+
+    subplot(nRow, nCol, nCol*2 + cnt)
+    plot(detect)
+
+    subplot(nRow, nCol, nCol*3 + cnt)
+    plot(mag.inferAngle)
+
 end

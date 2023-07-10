@@ -53,7 +53,7 @@ for cnt = 1:length(data)
 
         % Filter 5 : the delta angles measured from mag and gyro should be
         % different to each other
-        cur.filter5 = cur.filter2;
+        cur.filter5 = cur.filter4;
         %cur.filter6 = cur.filter4;
         for cnt3 = find(cur.filter5)'
             % range = cnt3 + 1 + (-wSize:-1);

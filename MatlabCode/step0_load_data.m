@@ -1,13 +1,17 @@
 clear;
 
 rawInclude = true;
-path = '../Data/Default_dataset/';
-folderName = 'Jaemin7';
+path = '../Data/';
+datasetName = 'default_dataset';
+folderName = 'jaemin7';
 
-path = [path, folderName];
+path = [path, datasetName, '/', folderName];
 
 c = {'Normal_objects', 'Holders'};
 postfix = char(c);
 
-
+% Phyphox version
 data = load_data(path, postfix);
+
+% New app version
+% data = new_load_data(path, postfix);

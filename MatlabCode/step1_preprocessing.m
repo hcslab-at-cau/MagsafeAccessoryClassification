@@ -1,5 +1,6 @@
 % Parameters
 sensors = {'gyro', 'mag', 'acc'};
+timestamp = {'calibrated', 'raw'};
 
 % Filter parameters for magnetometer
 rate = 100;
@@ -35,6 +36,11 @@ for cnt = 1:length(data)
 
             data(cnt).trial(cnt2).(char(sensors(cnt3))) = cur;
         end
+        
+        for cnt3 = 1:length(timestamp)
+        
+         end
+
 
         % Infer Magnetometer using gyroscope
         mag = data(cnt).trial(cnt2).('mag');

@@ -1,7 +1,7 @@
 function result = new_load_data(root,postfix)
 
 % Sensor list
-dataList = {'acc', 'motionTimestamp', 'gyro', 'mag', 'rmagTimestamp', 'rmag'};
+dataList = {'acc', 'gyro', 'mag', 'rmag', 'timestamp_calibrated', 'timestamp_raw'};
 sensors = {'acc', 'gyro', 'mag', 'rmag'};
 nSensors = length(dataList);
 % Load sensor data
@@ -32,7 +32,6 @@ for cnt = 1:size(postfix, 1)
             for cnt4 = 1:nSensors
                 tmp = csvread([files(idx + cnt4).folder, '/', files(idx + cnt4).name], 1, 0);
                 
-                disp([num2str(cnt4), char(dataList(cnt4))])
                 if max(ismember(sensors, char(dataList(cnt4)))) == 1
                     data(cnt2).trial(cnt3).(char(dataList(cnt4))).sample = tmp(:, 1:3);
                 else

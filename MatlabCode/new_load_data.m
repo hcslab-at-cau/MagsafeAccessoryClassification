@@ -1,7 +1,7 @@
 function result = new_load_data(root,postfix)
 
 % Sensor list
-dataList = {'acc', 'gyro', 'mag', 'rmag', 'timestamp_calibrated', 'timestamp_raw'};
+dataList = {'acc', 'detect', 'gyro', 'mag', 'rmag', 'time', 'timeRaw'};
 sensors = {'acc', 'gyro', 'mag', 'rmag'};
 nSensors = length(dataList);
 % Load sensor data

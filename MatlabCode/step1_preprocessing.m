@@ -1,6 +1,5 @@
 % Parameters
-sensors = {'gyro', 'mag', 'acc'};
-timestamp = {'calibrated', 'raw'};
+sensors = {'gyro', 'mag', 'rmag', 'acc'};
 
 % Filter parameters for magnetometer
 rate = 100;
@@ -8,6 +7,7 @@ order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 
 wSize = 1 * rate;
+calibrationRange = (1:200); % For raw magnetometer calibration
 
 % Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');
@@ -32,17 +32,26 @@ for cnt = 1:length(data)
                         cur.dAngle(cnt4) = subspace(cur.sample(cnt4, :)', cur.sample(cnt4 - 1, :)');
                     end                       
                     cur.magnitude = sum(filtfilt(b.mag, a.mag, cur.sample).^2, 2); % Extract the magnitude of high-pass filtered samples  
+
+                case 'rmag'
+                    [calibrationMatrix, bias, expmfs] = magcal(cur.sample(calibrationRange, :));
+
+                    cur.dAngle = zeros(length(cur.sample), 1); % Extract the amount of changes in angle
+
+                    % Calibrate raw magnetometer value
+                    cur.sample(1, :) = (cur.sample(1, :) - bias) * calibrationMatrix; 
+                    for cnt4 = 2:length(cur.sample)
+                        cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias) * calibrationMatrix;
+                        cur.dAngle(cnt4) = subspace(cur.sample(cnt4, :)', cur.sample(cnt4 - 1, :)');
+                    end
+
+                    cur.magnitude = sum(filtfilt(b.mag, a.mag, cur.sample).^2, 2); % Extract the magnitude of high-pass filtered samples  
             end
 
             data(cnt).trial(cnt2).(char(sensors(cnt3))) = cur;
         end
-        
-        for cnt3 = 1:length(timestamp)
-        
-         end
 
-
-        % Infer Magnetometer using gyroscope
+        % For calibrated magnetometer preprocess
         mag = data(cnt).trial(cnt2).('mag');
         gyro = data(cnt).trial(cnt2).('gyro');
 
@@ -82,6 +91,43 @@ for cnt = 1:length(data)
         
         data(cnt).trial(cnt2).corr = corrData;
         data(cnt).trial(cnt2).('mag') = mag;
+
+
+        % For raw magnetometer preprocess
+        mag = data(cnt).trial(cnt2).('rmag');
+
+        lResult = min([length(gyro.sample), length(mag.sample)]);
+        refMag = mag.sample(1, :);
+
+        mag.inferMag = zeros(lResult, 3);
+        mag.inferMag1s = zeros(lResult, 3);
+        mag.diff = zeros(lResult, 3);
+        mag.diffSum = zeros(lResult, 1);
+        mag.inferAngle = zeros(lResult, 1);
+        corrData = zeros(2, lResult);
+
+        for t = 2:lResult
+            euler = gyro.sample(t, :) * 1/rate;
+            rotm = eul2rotm(euler, 'XYZ');
+            mag.inferMag(t, :) = (rotm \ (refMag)')';
+            mag.inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
+            mag.inferAngle(t) = subspace(mag.inferMag1s(t, :)', mag.sample(t, :)');
+
+            refMag = mag.inferMag(t, :);
+            mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
+            mag.diffSum(t) = sqrt(sum(power(mag.diff(t, :), 2)));
+        end
+
+        interval = 5;
+
+        for t = interval + 1:lResult-interval
+            range = t + (-interval:interval);
+            corrData(1, t) = corr(mag.dAngle(range), mag.inferAngle(range));
+            corrData(2, t) = corr(mag.dAngle(range), gyro.dAngle(range));
+        end
+        
+        data(cnt).trial(cnt2).corrRaw = corrData;
+        data(cnt).trial(cnt2).('rmag') = mag;
     end
 end
 

@@ -37,3 +37,4 @@ for cnt = 1:length(data)
         feature(cnt).trial(cnt2).cur = cur;
     end
 end
+run('plot_feature.m')

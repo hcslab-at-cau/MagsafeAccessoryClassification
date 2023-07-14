@@ -1,3 +1,5 @@
+run("step1_timestamp_preprocessing.m")
+
 % Parameters
 sensors = {'gyro', 'mag', 'acc'};
 

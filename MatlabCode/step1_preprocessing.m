@@ -1,5 +1,9 @@
 % Parameters
-sensors = {'gyro', 'mag', 'rmag', 'acc'};
+sensors = {'gyro', 'mag', 'acc'};
+
+if rawInclude == true
+    sensors = [sensors, 'rmag'];
+end
 
 % Filter parameters for magnetometer
 rate = 100;
@@ -52,82 +56,55 @@ for cnt = 1:length(data)
         end
 
         % For calibrated magnetometer preprocess
-        mag = data(cnt).trial(cnt2).('mag');
+        magType = {'mag'};
+        if rawInclude == true
+            magType = [magType; 'rmag'];
+        end
+
         gyro = data(cnt).trial(cnt2).('gyro');
-
-        lResult = min([length(gyro.sample), length(mag.sample)]);
-        refMag = mag.sample(1, :);
-
-        mag.inferMag = zeros(lResult, 3);
-        mag.inferMag1s = zeros(lResult, 3);
-        mag.diff = zeros(lResult, 3);
-        mag.diffSum = zeros(lResult, 1);
-        mag.inferAngle = zeros(lResult, 1);
-        corrData = zeros(2, lResult);
-
-        for t = 2:lResult
-            euler = gyro.sample(t, :) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            mag.inferMag(t, :) = (rotm \ (refMag)')';
-            mag.inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
-            
-            % infer Angle --> angle between inferred mag and real mag
-            % inferred mag --> using prev 0.01s mag and gyroscope.
-            mag.inferAngle(t) = subspace(mag.inferMag1s(t, :)', mag.sample(t, :)');
-            refMag = mag.inferMag(t, :);
-
-            mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
-            mag.diffSum(t) = sqrt(sum(power(mag.diff(t, :), 2)));
     
+        for i = 1:length(magType)
+            mag = data(cnt).trial(cnt2).(char(magType(i)));
+            lResult = min([length(gyro.sample), length(mag.sample)]);
+            refMag = mag.sample(1, :);
+    
+            inferMag = zeros(lResult, 3);
+            inferMag1s = zeros(lResult, 3);
+            diff = zeros(lResult, 3);
+            diffSum = zeros(lResult, 1);
+            inferAngle = zeros(lResult, 1);
+            corrData = zeros(2, lResult);
+    
+            for t = 2:lResult
+                euler = gyro.sample(t, :) * 1/rate;
+                rotm = eul2rotm(euler, 'XYZ');
+                inferMag(t, :) = (rotm \ (refMag)')';
+                inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
+                
+                % infer Angle --> angle between inferred mag and real mag
+                % inferred mag --> using prev 0.01s mag and gyroscope.
+                inferAngle(t) = subspace(inferMag1s(t, :)', mag.sample(t, :)');
+                refMag = inferMag(t, :);
+    
+                diff(t, :) = mag.sample(t, :) - inferMag(t, :);
+                diffSum(t) = sqrt(sum(power(diff(t, :), 2)));
+            end
+            interval = 5;
+    
+            for t = interval + 1:lResult-interval
+                range = t + (-interval:interval);
+                corrData(1, t) = corr(mag.dAngle(range), inferAngle(range));
+                corrData(2, t) = corr(mag.dAngle(range), gyro.dAngle(range));
+            end
+
+            mag.diff= diff;
+            mag.inferAngle = inferAngle;
+            mag.diffSum = diffSum;
+            mag.corrData = corrData;
+            mag.inferMag = inferMag;
+            
+            data(cnt).trial(cnt2).(char(magType(i))) = mag;
         end
-
-        interval = 5;
-
-        for t = interval + 1:lResult-interval
-            range = t + (-interval:interval);
-            corrData(1, t) = corr(mag.dAngle(range), mag.inferAngle(range));
-            corrData(2, t) = corr(mag.dAngle(range), gyro.dAngle(range));
-        end
-        
-        data(cnt).trial(cnt2).corr = corrData;
-        data(cnt).trial(cnt2).('mag') = mag;
-
-
-        % For raw magnetometer preprocess
-        mag = data(cnt).trial(cnt2).('rmag');
-
-        lResult = min([length(gyro.sample), length(mag.sample)]);
-        refMag = mag.sample(1, :);
-
-        mag.inferMag = zeros(lResult, 3);
-        mag.inferMag1s = zeros(lResult, 3);
-        mag.diff = zeros(lResult, 3);
-        mag.diffSum = zeros(lResult, 1);
-        mag.inferAngle = zeros(lResult, 1);
-        corrData = zeros(2, lResult);
-
-        for t = 2:lResult
-            euler = gyro.sample(t, :) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            mag.inferMag(t, :) = (rotm \ (refMag)')';
-            mag.inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
-            mag.inferAngle(t) = subspace(mag.inferMag1s(t, :)', mag.sample(t, :)');
-
-            refMag = mag.inferMag(t, :);
-            mag.diff(t, :) = mag.sample(t, :) - mag.inferMag(t, :);
-            mag.diffSum(t) = sqrt(sum(power(mag.diff(t, :), 2)));
-        end
-
-        interval = 5;
-
-        for t = interval + 1:lResult-interval
-            range = t + (-interval:interval);
-            corrData(1, t) = corr(mag.dAngle(range), mag.inferAngle(range));
-            corrData(2, t) = corr(mag.dAngle(range), gyro.dAngle(range));
-        end
-        
-        data(cnt).trial(cnt2).corrRaw = corrData;
-        data(cnt).trial(cnt2).('rmag') = mag;
     end
 end
 

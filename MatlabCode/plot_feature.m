@@ -10,8 +10,8 @@ for cnt = 1:length(feature)
     for cnt2 = 1:nTrials
         cur = feature(cnt).trial(cnt2).cur;
         for cnt3 = 1:length(cur)
-            value = [value;cur(cnt3).diff];
-            value2 = [value2;cur(cnt3).diff2];
+            value = [value;cur(cnt3).diff(1, :)];
+            value2 = [value2;cur(cnt3).diff(2, :)];
         end 
     end
     values(cnt).feature = value;
@@ -29,7 +29,7 @@ clf
 for cnt = 1:length(values)
     p = values2(cnt).feature;
     
-    if cnt > 7
+    if cnt > 4
         scatter3(p(:,1), p(:,2), p(:,3), 'filled');
     else
         scatter3(p(:,1), p(:,2), p(:,3));

@@ -9,10 +9,10 @@ dAngleThreshold = .01;
 
 for cnt = 1:length(data)
     for cnt2 = 1:nTrials
-        mag = data(cnt).trial(cnt2).mag;
+        mag = data(cnt).trial(cnt2).rmag;
         acc = data(cnt).trial(cnt2).acc;
         gyro = data(cnt).trial(cnt2).gyro;
-        corrData = data(cnt).trial(cnt2).corr;
+        corrData = mag.corrData;
 
         lResult = min([length(mag.magnitude), length(acc.magnitude), ...
             length(mag.dAngle), length(gyro.dAngle)]);

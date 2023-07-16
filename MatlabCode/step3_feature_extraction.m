@@ -1,7 +1,8 @@
 rotOrder = 'XYZ';
-
+usingGroundTruth = false;
 extractInterval = (-wSize:wSize);
 feature = struct();
+featureFigNum = 1;
 
 for cnt = 1:length(data)
     feature(cnt).name = data(cnt).name;
@@ -13,6 +14,7 @@ for cnt = 1:length(data)
         mag = data(cnt).trial(cnt2).mag;
         gyro = data(cnt).trial(cnt2).gyro;
         filterIdx = find(filter);
+        detectGroundTruth = data(cnt).trial(cnt2).detect.sample;
 
         for cnt3 = 1:length(filterIdx)
             baseIdx = filterIdx(cnt3);
@@ -37,4 +39,5 @@ for cnt = 1:length(data)
         feature(cnt).trial(cnt2).cur = cur;
     end
 end
+
 run('plot_feature.m')

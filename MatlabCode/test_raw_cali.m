@@ -21,33 +21,27 @@ for cnt = 1:2:length(groundTruth)
         range = range(1):length(gyro);
     end
 
-    rawSample = rmag.rawSample;
-    [calMatrix, bias, exp] = magcal(rawSample(pnt + attachCalibration, :));
-
-    % refMag = (rawSample(range(1)-1, :)-bias)*calMatrix;
-    refMag = (rawSample(range(1)-1, :)-bias);
+    refMag = rmag.sample(range(1)-1, :);
     inferredMag = zeros(length(range), 3);
     diff = zeros(length(range), 3);
 
     for cnt2 = 1:length(range)
         t = range(cnt2);
-        % sample = (rawSample(t, :)-bias)*calMatrix;
-        sample = (rawSample(t, :)-bias);
 
         euler = gyro(t, :) * 1/rate;
         rotm = eul2rotm(euler, 'XYZ');
         inferredMag(cnt2, :) = (rotm\(refMag)')';
         refMag = inferredMag(cnt2, :);
-        diff(cnt2, :) = sample - inferredMag(cnt2, :);
+        diff(cnt2, :) = rmag.sample(t, :) - inferredMag(cnt2, :);
     end
 
-    disp(diff(length(range), :))
+    disp(diff(end, :))
 
     subplot(nRow, nCol, k)
     plot(inferredMag)
     legend({'x', 'y', 'z'})
     if cnt == 1
-        title('calibration raw data at detection')
+        title('initally raw cali')
     else
         title('inferred magnetometer')
     end

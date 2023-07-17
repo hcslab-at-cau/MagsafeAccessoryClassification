@@ -9,7 +9,7 @@ function [res, inferredMag] = func_extract_feature(mag, gyro, range, interval, r
         range = range(1):l;
     end
 
-    refMag = mag(range(1), :);
+    refMag = mag(range(1)-1, :);
 
     for t = range(1):interval:range(end)
         lIdx = t+ interval-1;

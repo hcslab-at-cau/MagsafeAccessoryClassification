@@ -1,10 +1,11 @@
 % In this feature plot, Using Ground-truth
 rotOrder = 'XYZ';
 attachInterval = (-wSize*3:wSize);
+attachCalibration = (-wSize*3:-wSize);
 detachInterval = (-wSize:wSize*2);
 usingGroundTruth = true;
 feature = struct();
-featureFigNum = 2;
+featureFigNum = 3;
 
 for cnt = 1:length(data)
     feature(cnt).name = data(cnt).name;
@@ -29,7 +30,34 @@ for cnt = 1:length(data)
                 range = groundTruth(cnt3) + detachInterval;
             end
 
-            [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, range, 1, rate);
+            
+            if range(1) < 2
+                range = 2:range(end);
+            end
+
+            if range(end) > length(gyro.sample)
+                range = range(1):length(gyro.sample);
+            end
+            
+
+            rawSample = mag.rawSample;
+
+            calRange = groundTruth(cnt3) + attachCalibration;
+            [caliMat, bias, exp] = magcal(rawSample(calRange, :));
+            
+            refMag = rawSample(range(1)-1, :)-bias;
+            for t = 1:length(range)
+
+                sample = (rawSample(range(t), :) - bias);
+                euler = gyro.sample(range(t), :)*1/rate;
+                rotm = eul2rotm(euler, 'XYZ');
+
+                inferredMag = (rotm\refMag')';
+                refMag = inferredMag;
+            end
+
+            featureValue = sample - inferredMag;
+
             
             if mod(cnt3, 2) == 1
                 cur(k).attach = featureValue; % for attach

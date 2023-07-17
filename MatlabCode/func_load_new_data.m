@@ -25,6 +25,7 @@ for cnt = 1:size(postfix, 1)
         
         files = dir([path.data, path.accessory(cnt2-prevCnt).name, '/**/*.csv']);
         files(contains({files(:).folder}, 'meta')) = [];
+        files(contains({files(:).name}, 'Calibration')) = [];
         
         for cnt3 = 1:length(files)/nSensors 
             idx = (cnt3 - 1) * nSensors;

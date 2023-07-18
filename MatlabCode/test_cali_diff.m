@@ -36,7 +36,7 @@ for cnt = 1:2:length(groundTruth)
     end
 
     disp(diff(end, :))
-
+    
     subplot(nRow, nCol, k)
     plot(inferredMag)
     legend({'x', 'y', 'z'})

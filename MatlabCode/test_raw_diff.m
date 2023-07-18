@@ -34,15 +34,15 @@ for cnt = 1:2:length(groundTruth)
  
     [calMatrix, bias, exp] = magcal(rawSample(calibrationRange, :));
 
-    refMag = (rawSample(range(1)-1, :)-bias)*calMatrix;
-    % refMag = (rawSample(range(1)-1, :)-bias);
+    % refMag = (rawSample(range(1)-1, :)-bias)*calMatrix;
+    refMag = (rawSample(range(1)-1, :)-bias);
     inferredMag = zeros(length(range), 3);
     diff = zeros(length(range), 3);
 
     for cnt2 = 1:length(range)
         t = range(cnt2);
-        sample = (rawSample(t, :)-bias)*calMatrix;
-        % sample = (rawSample(t, :)-bias);
+        % sample = (rawSample(t, :)-bias)*calMatrix;
+        sample = (rawSample(t, :)-bias);
 
         euler = gyro(t, :) * 1/rate;
         rotm = eul2rotm(euler, 'XYZ');

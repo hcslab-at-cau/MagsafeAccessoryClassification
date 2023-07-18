@@ -1,4 +1,4 @@
-accId = 7;
+accId = 8;
 trialId = 1;
 tmp = data(accId).trial(trialId);
 rmag = tmp.rmag;

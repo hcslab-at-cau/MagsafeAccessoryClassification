@@ -34,7 +34,7 @@ clf
 for cnt = 1:length(values)
     p = values(cnt).feature;
     
-    if cnt > 4
+    if cnt > 6
         scatter3(p(:,1), p(:,2), p(:,3), 'filled');
     else
         scatter3(p(:,1), p(:,2), p(:,3));

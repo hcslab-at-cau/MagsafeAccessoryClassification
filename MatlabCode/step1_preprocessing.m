@@ -46,11 +46,11 @@ for cnt = 1:length(data)
                     cur.dAngle = zeros(length(cur.sample), 1); % Extract the amount of changes in angle
 
                     % Calibrate raw magnetometer value
-                    % cur.sample(1, :) = (cur.sample(1, :) - bias) * calibrationMatrix; 
-                    cur.sample(1, :) = (cur.sample(1, :) - bias);
+                    cur.sample(1, :) = (cur.sample(1, :) - bias) * calibrationMatrix; 
+                    % cur.sample(1, :) = (cur.sample(1, :) - bias);
                     for cnt4 = 2:length(cur.sample)
-                        % cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias) * calibrationMatrix;
-                        cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias);
+                        cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias) * calibrationMatrix;
+                        % cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias);
                         cur.dAngle(cnt4) = subspace(cur.sample(cnt4, :)', cur.sample(cnt4 - 1, :)');
                     end
 

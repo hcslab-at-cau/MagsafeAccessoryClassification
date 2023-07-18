@@ -8,7 +8,7 @@ folderName = 'jaemin8';
 path = [path, datasetName, '/', folderName];
 
 % c = {'Normal_objects', 'Holders'};
-c = {'Normal_objects'};
+c = {'Normal_objects', 'Holders'};
 postfix = char(c);
 
 % Phyphox version

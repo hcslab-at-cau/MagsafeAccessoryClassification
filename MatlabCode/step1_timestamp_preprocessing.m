@@ -7,7 +7,7 @@ for cnt = 1:length(data)
 
     for cnt2 = 1:nTrials
         cur = data(cnt).trial(cnt2);
-        motionLength = length(cur.mag.sample);
+        motionLength = min([length(cur.mag.sample), length(cur.acc.sample), length(cur.gyro.sample)]);
         rmagLength = length(cur.rmag.sample);
 
         motionTime = cur.time.sample;

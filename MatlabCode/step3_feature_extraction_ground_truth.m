@@ -1,6 +1,6 @@
 %% For unit feature extraction point to point
 rotOrder = 'XYZ';
-attachInterval = (-wSize:wSize/2);
+attachInterval = (-wSize*2:wSize/2);
 % attachCalibration = (-wSize*3:-wSize);
 detachInterval = (-wSize:wSize*2);
 featureUnit = struct();
@@ -9,7 +9,7 @@ tic
 for cnt = 1:length(data)
     featureUnit(cnt).name = data(cnt).name;
     nTrials = length(data(cnt).trial);
-guggggggggsddsgdsgdsfadsgdgsdsdsgsdgds
+
     for cnt2 = 1:nTrials
         curUnit = struct();
         curRange = struct();
@@ -49,8 +49,8 @@ toc
 points = 10;
 % attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
 % calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
-attachRange = ((-wSize - points):(fix(wSize/2) + points));
-calRange = 1 + wSize + (-wSize:fix(wSize/2) + points);
+attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
+calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
 featureRange = struct();
 
 tic

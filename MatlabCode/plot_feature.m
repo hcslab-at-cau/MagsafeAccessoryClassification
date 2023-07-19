@@ -6,6 +6,7 @@ for cnt = 1:length(feature)
     value2 = [];
     values(cnt).name = feature(cnt).name;
     values2(cnt).name = feature(cnt).name;
+    nTrials = length(feature(cnt).trial);
 
     for cnt2 = 1:nTrials
         cur = feature(cnt).trial(cnt2).cur;
@@ -46,3 +47,6 @@ legend(label)
 xlabel('x')
 ylabel('y')
 zlabel('z')
+xlim([-150, 10]);
+ylim([-20, 150]);
+zlim([-150, 50]);

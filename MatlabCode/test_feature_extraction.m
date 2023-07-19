@@ -1,5 +1,5 @@
-accId = 8;
-trialId = 1;
+accId = 4;
+trialId = 8;
 tmp = data(accId).trial(trialId);
 rmag = tmp.rmag;
 mag = tmp.mag;
@@ -8,10 +8,10 @@ gyro = tmp.gyro.sample;
 
 
 % 1. calibration at detect
-figNum = 10;
-disp('test raw diff values')
-disp(data(accId).name)
-run('test_raw_diff.m')
+figNum = 15;
+% disp('test raw diff values')
+% disp(data(accId).name)
+% run('test_raw_diff.m')
 
 % for k = 1:10
 %     trialId = k;
@@ -29,7 +29,7 @@ figNum = figNum + 1;
 disp('test calibrated diff values')
 run('test_cali_diff.m')
 
-% 3. raw data initally calibrated
-figNum = figNum + 1;
-disp('test raw calibration diff values')
-run('test_raw_cali.m')
+% % 3. raw data initally calibrated
+% figNum = figNum + 1;
+% disp('test raw calibration diff values')
+% run('test_raw_cali.m')

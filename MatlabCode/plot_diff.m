@@ -1,10 +1,10 @@
-accId = 6;
-showTrials = 10:10;
-threshold = 45;
+accId = 12;
+showTrials = 1:10;
+threshold = 70;
 
 gt = struct();
-for cnt = 1:nTrials
-    tmp = data(accId).trial(cnt);
+for cnt = 1:length(showTrials)
+    tmp = data(accId).trial(showTrials(cnt));
     diff = tmp.mag.diff;
     diffMagnitude = zeros(1, length(diff(1, :)));
     count = 0;
@@ -12,7 +12,7 @@ for cnt = 1:nTrials
     for cnt2 = 1:length(diffMagnitude)
         diffMagnitude = sqrt(sum(diff.^2, 2));
     end
-    
+
     tmpFilter = diffMagnitude > threshold;
     groundTruthFilter = zeros(length(tmpFilter), 1);
 
@@ -23,19 +23,23 @@ for cnt = 1:nTrials
         end
     end
     if count ~= 10
-        disp(cnt)
+        disp(showTrials(cnt))
     end
-    
+
     k = 1;
     for cnt2 = find(groundTruthFilter)'
-        gt(k).(['value_', num2str(cnt)]) = cnt2;
+        gt(k).(['value_', num2str(showTrials(cnt))]) = cnt2;
         k = k+1;
     end
 end
 
 
-figure(9)
+%%
+
+figure(8)
 clf
+
+showTrials = [4, 10];
 
 nCol = length(showTrials);
 nRow = 4;
@@ -46,7 +50,6 @@ for cnt = 1:length(showTrials)
     detect = detected(accId).trial(showTrials(cnt)).filter6;
     mag = data(accId).trial(showTrials(cnt)).mag;
     gyro = data(accId).trial(showTrials(cnt)).gyro;
-    corrData = data(accId).trial(showTrials(cnt)).corr(1, :);
     diff = mag.diff;
     diffMagnitude = zeros(1, length(diff(1, :)));
 
@@ -62,7 +65,6 @@ for cnt = 1:length(showTrials)
     subplot(nRow, nCol, nCol + cnt)
     plot(diffFilter)
     
-
     subplot(nRow, nCol, nCol*2 + cnt)
     plot(detect)
 

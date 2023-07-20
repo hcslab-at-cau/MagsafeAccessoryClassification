@@ -1,3 +1,7 @@
+feature = f3;
+featureFigNum = 1;
+usingGroundTruth = true;
+
 values = struct();
 values2 = struct();
 

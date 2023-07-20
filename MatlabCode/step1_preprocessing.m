@@ -1,4 +1,7 @@
-run("step1_timestamp_preprocessing.m")
+tic
+if rawInclude == true
+    run("step1_timestamp_preprocessing.m")
+end
 
 % Parameters
 sensors = {'gyro', 'mag', 'acc'};
@@ -112,6 +115,7 @@ for cnt = 1:length(data)
         end
     end
 end
+toc
 
 % figure(1)
 % clf

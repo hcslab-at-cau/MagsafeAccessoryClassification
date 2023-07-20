@@ -50,7 +50,8 @@ points = 10;
 % attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
 % calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
 attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
-calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
+% calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
+calRange = 1:(wSize*2 + fix(wSize/2) + points);
 featureRange = struct();
 
 tic
@@ -97,8 +98,8 @@ toc
 %% For range feature extraction range to range
 
 points = 10;
-attachRange = ((-wSize - points):(fix(wSize/2) + points));
-calRange = 1 + wSize + (-wSize:fix(wSize/2) + points);
+attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
+calRange = 1:(wSize*2 + fix(wSize/2) + points);
 featureRangeRange = struct();
 
 tic
@@ -144,8 +145,6 @@ for cnt = 1:length(data)
     end
 end
 toc
-
-
 %% plot features
 featureFigNum = 40;
 usingGroundTruth = true;
@@ -160,5 +159,5 @@ run('plot_feature.m')
 
 featureFigNum = featureFigNum + 1;
 
-% feature = featureRangeRange;
-% run('plot_feature.m')
+feature = featureRangeRange;
+run('plot_feature.m')

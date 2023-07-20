@@ -1,5 +1,4 @@
-attachInterval = (-wSize*3:wSize);
-attachCalibration = (-wSize*3:-wSize);
+attachInterval = (-wSize*2:wSize);
 detachInterval = (-wSize:wSize*3);
 
 nCol = fix(length(groundTruth)/2);

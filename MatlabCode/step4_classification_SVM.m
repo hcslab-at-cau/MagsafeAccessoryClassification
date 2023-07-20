@@ -1,16 +1,17 @@
 clear;
 
-prefix.train = 'Test';
-prefix.test = 'Test_nature2';
+% data load
+prefix.train = 'value_p2p';
+prefix.test = 'value_p2p';
 
-train = load([prefix.train, '.mat']);
-test = load([prefix.test, '.mat']);
+train = func_load_feature(prefix.train);
+test = func_load_feature(prefix.test);
 
 isSame = strcmp(prefix.train, prefix.test);
 
-nAcc = length(train.data);
-nTrainTotal = length(train.feature(1).trial);
-nTestTotal = length(test.feature(1).trial);
+nAcc = length(train);
+nTrainTotal = length(train(1).feature);
+nTestTotal = length(test(1).feature);
 
 nTrainCur = 15;
 if isSame
@@ -29,7 +30,7 @@ if isSame
     testIdx(trainIdx) = false;
 end
 
-lFeature = 4;
+lFeature = 3;
 featureMatrix = [];
 featureMatrix.train.data = zeros(nAcc * nTrainCur, lFeature);
 featureMatrix.train.label = zeros(nAcc * nTrainCur, 1);
@@ -38,15 +39,15 @@ featureMatrix.test.data = zeros(nAcc * nTestCur, lFeature);
 featureMatrix.test.label = zeros(nAcc * nTestCur, 1);
 
 for cnt = 1:nAcc
-    curTrain = train.feature(cnt).trial(trainIdx);
-    curTest = test.feature(cnt).trial(testIdx);
+    curTrain = train(cnt).feature(trainIdx, :);
+    curTest = test(cnt).feature(testIdx, :);
     
     range = (cnt - 1) * nTrainCur + (1:nTrainCur);
-    featureMatrix.train.data(range, :) = [vertcat(curTrain.diff), vertcat(curTrain.m)];   
+    featureMatrix.train.data(range, :) = [vertcat(curTrain)];   
     featureMatrix.train.label(range) = cnt;
-        
+    
     range = (cnt - 1) * nTestCur + (1:nTestCur);
-    featureMatrix.test.data(range, :) = [vertcat(curTest.diff), vertcat(curTest.m)];
+    featureMatrix.test.data(range, :) = [vertcat(curTest)];
     featureMatrix.test.label(range) = cnt;   
 end
 
@@ -58,7 +59,25 @@ model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
 model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label);
 
 tmp = predict(model.knn, featureMatrix.test.data);
-sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)
+s1 = sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)
 
-tmp = predict(model.svm, featureMatrix.test.data);
-sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)
+tmp2 = predict(model.svm, featureMatrix.test.data);
+s2 = sum(tmp2 == featureMatrix.test.label) / length(featureMatrix.test.data)
+%%
+
+order = {};
+
+for cnt = 1:length(train)
+    order = [order; train(cnt).name];
+end
+
+figure(1)
+clf
+c = confusionmat(featureMatrix.test.label, tmp);
+cm = confusionchart(c, order)
+
+
+figure(2)
+clf
+c = confusionmat(featureMatrix.test.label, tmp2);
+cm = confusionchart(c, order)

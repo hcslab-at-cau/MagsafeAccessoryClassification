@@ -1,16 +1,16 @@
 clear;
 
-prefix.train = 'Test_nature1';
-prefix.test = 'Test_nature1';
+prefix.train = 'jaemin8_p2p';
+prefix.test = 'junhyub1_p2p';
 
-train = load([prefix.train, '.mat']);
-test = load([prefix.test, '.mat']);
+train = func_load_feature(prefix.train);
+test = func_load_feature(prefix.test);
 
 isSame = strcmp(prefix.train, prefix.test);
 
-nAcc = length(train.data);
-nTrainTotal = length(train.feature(1).trial);
-nTestTotal = length(test.feature(1).trial);
+nAcc = length(train);
+nTrainTotal = length(train(1).feature);
+nTestTotal = length(test(1).feature);
 
 nTrainCur = 15;
 if isSame
@@ -29,7 +29,7 @@ if isSame
     testIdx(trainIdx) = false;
 end
 
-lFeature = 4;
+lFeature = 3;
 featureMatrix = [];
 featureMatrix.train.data = zeros(nAcc * nTrainCur, lFeature);
 featureMatrix.train.label = zeros(nAcc * nTrainCur, 1);
@@ -38,16 +38,16 @@ featureMatrix.test.data = zeros(nAcc * nTestCur, lFeature);
 featureMatrix.test.label = zeros(nAcc * nTestCur, 1);
 
 for cnt = 1:nAcc
-    curTrain = train.feature(cnt).trial(trainIdx);
-    curTest = test.feature(cnt).trial(testIdx);
+    curTrain = train(cnt).feature(trainIdx, :);
+    curTest = test(cnt).feature(testIdx, :);
     
     range = (cnt - 1) * nTrainCur + (1:nTrainCur);
-    featureMatrix.train.data(range, :) = [vertcat(curTrain.diff), vertcat(curTrain.m)];   
+    featureMatrix.train.data(range, :) = [vertcat(curTrain)];   
     featureMatrix.train.label(range) = cnt;
-        
+    
     range = (cnt - 1) * nTestCur + (1:nTestCur);
-    featureMatrix.test.data(range, :) = [vertcat(curTest.diff), vertcat(curTest.m)];
-    featureMatrix.test.label(range) = cnt;
+    featureMatrix.test.data(range, :) = [vertcat(curTest)];
+    featureMatrix.test.label(range) = cnt;   
     
 end
 
@@ -79,3 +79,6 @@ end
 
 
 result.acc = sum(result.selected == featureMatrix.test.label) / length(idx)
+
+%%
+

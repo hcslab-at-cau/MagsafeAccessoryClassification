@@ -1,8 +1,7 @@
-clear;
 
 % data load
-prefix.train = 'value_p2p';
-prefix.test = 'value_p2p';
+prefix.train = 'jaemin8_p2p';
+prefix.test = 'junhyub1_p2p_wSize';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);

@@ -1,7 +1,8 @@
-feature = f3;
-featureFigNum = 1;
-usingGroundTruth = true;
-
+% f1 = func_load_feature('junhyub1_r2r');
+% feature = f1;
+% featureFigNum = 1;
+% usingGroundTruth = true;
+% 
 values = struct();
 values2 = struct();
 
@@ -28,13 +29,19 @@ for cnt = 1:length(feature)
     values2(cnt).feature = value2;
 end
 
+
+
+% values= func_load_feature('junhyub1_p2p');
+
+
 label = [];
 for cnt = 1:length(values)
     label = strvcat(label, [values(cnt).name]);
 end
 
-figure(featureFigNum)
+figure(52)
 clf
+
 
 for cnt = 1:length(values)
     p = values(cnt).feature;
@@ -51,6 +58,6 @@ legend(label)
 xlabel('x')
 ylabel('y')
 zlabel('z')
-xlim([-150, 10]);
-ylim([-20, 150]);
-zlim([-150, 50]);
+% xlim([-150, 10]);
+% ylim([-20, 150]);
+% zlim([-150, 50]);

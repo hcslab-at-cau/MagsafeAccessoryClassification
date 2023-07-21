@@ -9,7 +9,7 @@ dAngleThreshold = .01;
 
 for cnt = 1:length(data)
     for cnt2 = 1:nTrials
-        mag = data(cnt).trial(cnt2).rmag;
+        mag = data(cnt).trial(cnt2).mag;
         acc = data(cnt).trial(cnt2).acc;
         gyro = data(cnt).trial(cnt2).gyro;
         corrData = mag.corrData;
@@ -58,7 +58,7 @@ for cnt = 1:length(data)
         for cnt3 = find(cur.filter5)'
             % range = cnt3 + 1 + (-wSize:-1);
             
-            cur.filter5(cnt3) = corrData(1, cnt3) > 0.5;
+            cur.filter5(cnt3) = corrData(1, cnt3) > 0.9;
             %cur.filter6(cnt3) = corrData(2, cnt3) > 0.5;
             % range = cnt3-10 + 1:cnt3+10;
             % cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) > corrThreshold;
@@ -67,7 +67,7 @@ for cnt = 1:length(data)
         % Filter 6 : 0.5s 내 1개.
         cur.filter6 = cur.filter5;
         for cnt3 = find(cur.filter6)'
-            range = cnt3 + (-wSize/2:-1);
+            range = cnt3 + (-wSize:-1);
             
             if max(cur.filter6(range)) == 1
                 cur.filter6(cnt3) = 0;

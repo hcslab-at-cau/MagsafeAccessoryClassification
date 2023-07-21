@@ -1,12 +1,12 @@
 tic
-if rawInclude == true
+if newApp == true
     run("step1_timestamp_preprocessing.m")
 end
 
 % Parameters
 sensors = {'gyro', 'mag', 'acc'};
 
-if rawInclude == true
+if newApp == true
     sensors = [sensors, 'rmag'];
 end
 
@@ -29,7 +29,7 @@ for cnt = 1:length(data)
             cur = data(cnt).trial(cnt2).(char(sensors(cnt3)));
 
             switch char(sensors(cnt3))
-                case 'gyro' % Extract the amount of changes in angle
+                case 'gyro' % Extract the amount of schanges in angle
                     cur.dAngle = sqrt(sum(cur.sample.^2, 2)) * 1/rate;  
 
                 case 'acc' % Extract the magnitude of high-pass filtered samples         
@@ -65,7 +65,7 @@ for cnt = 1:length(data)
 
         % For calibrated magnetometer preprocess
         magType = {'mag'};
-        if rawInclude == true
+        if newApp == true
             magType = [magType; 'rmag'];
         end
 

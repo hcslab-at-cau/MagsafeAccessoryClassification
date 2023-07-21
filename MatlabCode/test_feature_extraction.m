@@ -1,27 +1,32 @@
-accId = 4;
-trialId = 9;
-tmp = data(accId).trial(trialId);
-rmag = tmp.rmag;
-mag = tmp.mag;
-groundTruth = tmp.detect.sample;
-gyro = tmp.gyro.sample;
+accId = 10;
+showTrials = 1:10;
 
+if newApp == false
+        groundTruthData = func_load_ground_truth(datasetName, folderName);
+end
 
 % 1. calibration at detect
 figNum = 15;
 % disp('test raw diff values')
-% disp(data(accId).name)
+disp(data(accId).name)
 % run('test_raw_diff.m')
 
-for k = 1:10
-    trialId = k;
-    tmp = data(accId).trial(trialId);
-    rmag = tmp.rmag;
+
+for cnt = 1:length(showTrials)
+    tmp = data(accId).trial(showTrials(cnt));
+    % rmag = tmp.rmag;
     mag = tmp.mag;
-    groundTruth = tmp.detect.sample;
+    
+    if newApp == false
+        groundTruth = groundTruthData.([data(accId).name, '_', num2str(showTrials(cnt))]);
+    else
+        groundTruth = tmp.detect.sample;
+    end
+    
     gyro = tmp.gyro.sample;
-    disp('test calibrated diff values')
+    
     run('test_cali_diff.m')
+    figNum = figNum + 1;
 end
 % 2. initally calibrated data
 % figNum = figNum + 1;

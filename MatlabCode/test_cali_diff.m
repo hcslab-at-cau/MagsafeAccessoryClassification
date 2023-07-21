@@ -1,14 +1,19 @@
 attachInterval = (-wSize*2:wSize);
 detachInterval = (-wSize:wSize*3);
 
-nCol = fix(length(groundTruth)/2);
+if newApp == false
+    nCol = fix(size(groundTruth, 1)/2);
+else
+    nCol = fix(length(groundTruth)/2);
+end
+
 nRow = 3;
 k = 1;
 
 figure(figNum)
 clf
 
-for cnt = 1:2:length(groundTruth)
+for cnt = 1:2:nCol*2
     pnt = groundTruth(cnt);
     range = pnt + attachInterval;
     

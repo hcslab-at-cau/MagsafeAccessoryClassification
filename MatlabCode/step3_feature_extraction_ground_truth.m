@@ -1,9 +1,13 @@
-%% For unit feature extraction point to point
+ %% For unit feature extraction point to point
 rotOrder = 'XYZ';
-attachInterval = (-wSize*2:wSize/2);
+attachInterval = (-wSize*2:wSize);
 % attachCalibration = (-wSize*3:-wSize);
 detachInterval = (-wSize:wSize*2);
 featureUnit = struct();
+
+if newApp == false
+    groundTruthData = func_load_ground_truth(datasetName, folderName);
+end
 
 tic
 for cnt = 1:length(data)
@@ -16,7 +20,13 @@ for cnt = 1:length(data)
         tmp = data(cnt).trial(cnt2);
         mag = tmp.mag;
         gyro = tmp.gyro.sample;
-        groundTruth = tmp.detect.sample;
+        
+        if newApp == false
+            groundTruth = groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]);
+        else
+            groundTruth = tmp.detect.sample;
+        end
+    
         k = 1;
 
         if length(groundTruth) ~= 10
@@ -64,7 +74,13 @@ for cnt = 1:length(data)
         tmp = data(cnt).trial(cnt2);
         mag = tmp.mag;
         gyro = tmp.gyro.sample;
-        groundTruth = tmp.detect.sample;
+
+        if newApp == false
+            groundTruth = groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]);
+        else
+            groundTruth = tmp.detect.sample;
+        end
+
         k = 1;
 
         if length(groundTruth) ~= 10
@@ -112,7 +128,11 @@ for cnt = 1:length(data)
         tmp = data(cnt).trial(cnt2);
         mag = tmp.mag;
         gyro = tmp.gyro.sample;
-        groundTruth = tmp.detect.sample;
+        if newApp == false
+            groundTruth = groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]);
+        else
+            groundTruth = tmp.detect.sample;
+        end
         k = 1;
 
         if length(groundTruth) ~= 10
@@ -149,15 +169,15 @@ toc
 featureFigNum = 40;
 usingGroundTruth = true;
 
-feature = featureRange;
-run('plot_feature.m')
-
-featureFigNum = featureFigNum + 1;
-
 feature = featureUnit;
 run('plot_feature.m')
 
-featureFigNum = featureFigNum + 1;
-
-feature = featureRangeRange;
-run('plot_feature.m')
+% featureFigNum = featureFigNum + 1;
+% 
+% feature = featureRange;
+% run('plot_feature.m')
+% 
+% featureFigNum = featureFigNum + 1;
+% 
+% feature = featureRangeRange;
+% run('plot_feature.m')

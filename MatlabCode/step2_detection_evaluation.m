@@ -1,11 +1,12 @@
 detectionGroundTruth = struct();
-groundTruth = load_ground_truth(datasetName, folderName);
-wRange = (-20:20);
+groundTruth = func_load_ground_truth(datasetName, folderName);
+wRange = (-100:100);
 
 for cnt = 1:length(data)
     accName = data(cnt).name;
     cur = struct();
     detectionGroundTruth(cnt).name = accName;
+    nTrials = length(data(cnt).trial);
 
     for cnt2 = 1:nTrials
         detectTimes = groundTruth.([accName, '_', num2str(cnt2)]);
@@ -13,6 +14,7 @@ for cnt = 1:length(data)
         detachCnt = 0;    
         totalDetection = length(find(detected(cnt).trial(cnt2).filter6));
         maxLength = length(detected(cnt).trial(cnt2).filter6);
+        fpCount = 0;
 
         for t = 1:length(detectTimes)
             detectGroundTruth = detectTimes(t);
@@ -30,10 +32,13 @@ for cnt = 1:length(data)
                 end
             end
 
-            cur.trial(cnt2).attachCount = attachCnt;
-            cur.trial(cnt2).detachCount = detachCnt;
-            cur.trial(cnt2).falsePositive = totalDetection - attachCnt - detachCnt;
+            if length(find(detected(cnt).trial(cnt2).filter6(range)')) > 1
+                fpCount = fpCount + length(find(detected(cnt).trial(cnt2).filter6(range)'))-1;
+            end
         end
+        cur.trial(cnt2).attachCount = attachCnt;
+        cur.trial(cnt2).detachCount = detachCnt;
+        cur.trial(cnt2).falsePositive = totalDetection - attachCnt - detachCnt + fpCount;
     end
 
     detectionGroundTruth(cnt).value = cur;

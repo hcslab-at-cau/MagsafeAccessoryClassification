@@ -9,7 +9,7 @@ for cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
 
     for cnt2 = 1:nTrials
-        detectTimes = groundTruth.([accName, '_', num2str(cnt2)]);
+        detectTimes = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
         attachCnt = 0;
         detachCnt = 0;    
         totalDetection = length(find(detected(cnt).trial(cnt2).filter6));

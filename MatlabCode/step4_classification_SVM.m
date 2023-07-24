@@ -1,10 +1,18 @@
 
 % data load
 prefix.train = 'jaemin8_p2p';
-prefix.test = 'junhyub1_p2p_wSize';
+prefix.test = 'jaemin4_p2p';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
+
+
+% Drop tables
+dropTable = {'holder3'};
+
+% for cnt = 
+
+
 
 isSame = strcmp(prefix.train, prefix.test);
 
@@ -38,8 +46,26 @@ featureMatrix.test.data = zeros(nAcc * nTestCur, lFeature);
 featureMatrix.test.label = zeros(nAcc * nTestCur, 1);
 
 for cnt = 1:nAcc
-    curTrain = train(cnt).feature(trainIdx, :);
-    curTest = test(cnt).feature(testIdx, :);
+
+    if length(trainIdx) ~= length(train(cnt).feature)
+        curTrain = train(cnt).feature(trainIdx(1:length(train(cnt).feature)), :);
+    else
+        curTrain = train(cnt).feature(trainIdx, :);
+    end
+
+    if length(testIdx) ~= length(test(cnt).feature)
+        curTest = test(cnt).feature(testIdx(1:length(test(cnt).feature)), :);
+        
+        for cnt2 = 1:length(abs(length(testIdx) - length(test(cnt).feature)))
+            curTest = [curTest;  NaN(1,3,'single')];
+        end
+
+    else
+        curTest = test(cnt).feature(testIdx, :);
+    end
+
+    % curTrain = train(cnt).feature(trainIdx, :);
+    % curTest = test(cnt).feature(testIdx, :);
     
     range = (cnt - 1) * nTrainCur + (1:nTrainCur);
     featureMatrix.train.data(range, :) = [vertcat(curTrain)];   
@@ -70,13 +96,13 @@ for cnt = 1:length(train)
     order = [order; train(cnt).name];
 end
 
-figure(1)
+figure('Name','KNN','NumberTitle','off');
 clf
 c = confusionmat(featureMatrix.test.label, tmp);
 cm = confusionchart(c, order)
 
 
-figure(2)
+figure('Name','SVM','NumberTitle','off');
 clf
 c = confusionmat(featureMatrix.test.label, tmp2);
 cm = confusionchart(c, order)

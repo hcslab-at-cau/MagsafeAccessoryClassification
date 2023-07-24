@@ -1,6 +1,6 @@
  %% For unit feature extraction point to point
 rotOrder = 'XYZ';
-attachInterval = (-wSize*2:wSize);
+attachInterval = (-wSize*2:wSize/2);
 % attachCalibration = (-wSize*3:-wSize);
 detachInterval = (-wSize:wSize*2);
 featureUnit = struct();
@@ -18,11 +18,11 @@ for cnt = 1:length(data)
         curUnit = struct();
         curRange = struct();
         tmp = data(cnt).trial(cnt2);
-        mag = tmp.mag;
+        mag = tmp.mag.sample;
         gyro = tmp.gyro.sample;
         
         if newApp == false
-            groundTruth = groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]);
+            groundTruth = rmmissing(groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]));
         else
             groundTruth = tmp.detect.sample;
         end
@@ -40,7 +40,8 @@ for cnt = 1:length(data)
                 range = groundTruth(cnt3) + detachInterval;
             end
             
-            [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro, range, 1, rate);
+
+            [featureValue, inferredMag] = func_extract_feature(mag, gyro, range, 1, rate);
             
             if mod(cnt3, 2) == 1
                 curUnit(k).attach = featureValue; % for attach
@@ -76,7 +77,7 @@ for cnt = 1:length(data)
         gyro = tmp.gyro.sample;
 
         if newApp == false
-            groundTruth = groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]);
+            groundTruth = rmmissing(groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]));
         else
             groundTruth = tmp.detect.sample;
         end
@@ -129,7 +130,7 @@ for cnt = 1:length(data)
         mag = tmp.mag;
         gyro = tmp.gyro.sample;
         if newApp == false
-            groundTruth = groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]);
+            groundTruth = rmmissing(groundTruthData.([featureUnit(cnt).name, '_', num2str(cnt2)]));
         else
             groundTruth = tmp.detect.sample;
         end
@@ -168,16 +169,16 @@ toc
 %% plot features
 featureFigNum = 40;
 usingGroundTruth = true;
-
-feature = featureUnit;
-run('plot_feature.m')
-
-% featureFigNum = featureFigNum + 1;
 % 
+% feature = featureUnit;
+% run('plot_feature.m')
+% 
+% featureFigNum = featureFigNum + 1;
+
 % feature = featureRange;
 % run('plot_feature.m')
 % 
 % featureFigNum = featureFigNum + 1;
-% 
-% feature = featureRangeRange;
-% run('plot_feature.m')
+
+feature = featureRangeRange;
+run('plot_feature.m')

@@ -34,9 +34,9 @@ for cnt = 1:length(data)
                 end
             end
 
-            if length(find(detected(cnt).trial(cnt2).filter6(range)')) > 1
-                fpCount = fpCount + length(find(detected(cnt).trial(cnt2).filter6(range)'))-1;
-            end
+            % if length(find(detected(cnt).trial(cnt2).filter6(range)')) > 1
+            %     fpCount = fpCount + length(find(detected(cnt).trial(cnt2).filter6(range)'))-1;
+            % end
         end
         cur.trial(cnt2).attachCount = attachCnt;
         cur.trial(cnt2).detachCount = detachCnt;

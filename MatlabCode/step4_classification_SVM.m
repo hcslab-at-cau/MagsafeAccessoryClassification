@@ -9,9 +9,12 @@ test = func_load_feature(prefix.test);
 
 % Drop tables
 dropTable = {'holder3'};
+accNames = {train.name};
 
-% for cnt = 
-
+for cnt = 1:length(dropTable)
+    train(contains(accNames, char(dropTable(cnt)))) = [];
+    test(contains(accNames, char(dropTable(cnt)))) = [];
+end
 
 
 isSame = strcmp(prefix.train, prefix.test);

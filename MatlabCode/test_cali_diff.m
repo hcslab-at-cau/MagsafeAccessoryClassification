@@ -1,5 +1,5 @@
 attachInterval = (-wSize*2:wSize);
-detachInterval = (-wSize:wSize*3);
+detachInterval = (-wSize:wSize*2);
 
 if newApp == false
     nCol = fix(size(groundTruth, 1)/2);

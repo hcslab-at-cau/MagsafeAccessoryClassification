@@ -1,6 +1,6 @@
  %% For unit feature extraction point to point
 rotOrder = 'XYZ';
-attachInterval = (-wSize*2:wSize/2);
+attachInterval = (-150:150);
 % attachCalibration = (-wSize*3:-wSize);
 detachInterval = (-wSize:wSize*2);
 featureUnit = struct();
@@ -58,11 +58,11 @@ end
 toc
 %% For range feature extraction point to point
 points = 10;
+attachRange = ((-wSize*2 - points):(wSize + points));
+calRange = 1:(wSize*3 + points);
+
 % attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
-% calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
-attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
-% calRange = 1 + wSize*2 + (-wSize*2:fix(wSize/2) + points);
-calRange = 1:(wSize*2 + fix(wSize/2) + points);
+% calRange = 1:(wSize*2 + fix(wSize/2) + points);
 featureRange = struct();
 
 tic
@@ -96,7 +96,7 @@ for cnt = 1:length(data)
                 t = range(1) + cnt4;
                 subRange = t + calRange;
         
-                [f, iv] = func_extract_feature(mag.sample, gyro, subRange, 1, rate);
+                [f, iv] = func_extract_feature(mag.sample, gyro, subRange, 4, rate);
                 featureTmp = f+featureTmp;
             end
             
@@ -115,8 +115,11 @@ toc
 %% For range feature extraction range to range
 
 points = 10;
-attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
-calRange = 1:(wSize*2 + fix(wSize/2) + points);
+% attachRange = ((-wSize*2 - points):(fix(wSize/2) + points));
+% calRange = 1:(wSize*2 + fix(wSize/2) + points);
+
+attachRange = ((-wSize*2 - points):(wSize + points));
+calRange = 1:(wSize*3 + points);
 featureRangeRange = struct();
 
 tic
@@ -149,7 +152,7 @@ for cnt = 1:length(data)
                 for cnt5 = 1:points
                     
                     subRange = t1:(range(end)-cnt5);
-                    [f, iv] = func_extract_feature(mag.sample, gyro, subRange, 1, rate);
+                    [f, iv] = func_extract_feature(mag.sample, gyro, subRange, 4, rate);
                     featureTmp = f+featureTmp;
                 end      
             end
@@ -169,16 +172,19 @@ toc
 %% plot features
 featureFigNum = 40;
 usingGroundTruth = true;
-% 
-% feature = featureUnit;
-% run('plot_feature.m')
-% 
-% featureFigNum = featureFigNum + 1;
 
+feature = featureUnit;
+run('plot_feature.m')
+% func_save_feature(values, [folderName, '_p2p', '_wSize'])
+ 
+% featureFigNum = featureFigNum + 1;
+% 
 % feature = featureRange;
 % run('plot_feature.m')
+% func_save_feature(values, [folderName, '_p2pRange', '_wSize'])
 % 
 % featureFigNum = featureFigNum + 1;
-
-feature = featureRangeRange;
-run('plot_feature.m')
+% 
+% feature = featureRangeRange;
+% run('plot_feature.m')
+% func_save_feature(values, [folderName, '_r2r', '_wSize'])

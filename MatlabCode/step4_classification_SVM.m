@@ -1,20 +1,21 @@
 
 % data load
-prefix.train = 'jaemin8_p2p';
-prefix.test = 'jaemin4_p2p';
+prefix.train = 'jaemin4_p2p_wSize';
+prefix.test = 'jaemin8_p2p';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
+accNames = {data(:).name};
 
 
 % Drop tables
-dropTable = {'holder3'};
-accNames = {train.name};
-
-for cnt = 1:length(dropTable)
-    train(contains(accNames, char(dropTable(cnt)))) = [];
-    test(contains(accNames, char(dropTable(cnt)))) = [];
-end
+% dropTable = {'holder3'};
+% accNames = {train.name};
+% 
+% for cnt = 1:length(dropTable)
+%     train(contains(accNames, char(dropTable(cnt)))) = [];
+%     test(contains(accNames, char(dropTable(cnt)))) = [];
+% end
 
 
 isSame = strcmp(prefix.train, prefix.test);
@@ -23,7 +24,7 @@ nAcc = length(train);
 nTrainTotal = length(train(1).feature);
 nTestTotal = length(test(1).feature);
 
-nTrainCur = 15;
+nTrainCur = 50;
 if isSame
     nTrainCur = min(nTrainTotal - 1, nTrainCur);
     nTestCur = nTrainTotal - nTrainCur;
@@ -80,17 +81,26 @@ for cnt = 1:nAcc
 end
 
 result = [];
-template.knn = templateKNN('NumNeighbors', 5, 'Standardize', true);
+template.knn = templateKNN('NumNeighbors', 15, 'Standardize', true);
+template.svm = templateSVM('Standardize',true);
 
 model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
     'Learners', template.knn);
-model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label);
+
+model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'learners', template.svm);
+
 
 tmp = predict(model.knn, featureMatrix.test.data);
 s1 = sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)
 
-tmp2 = predict(model.svm, featureMatrix.test.data);
+
+[tmp2, scores] = predict(model.svm, featureMatrix.test.data);
+p = exp(scores) ./ sum(exp(scores),2);
 s2 = sum(tmp2 == featureMatrix.test.label) / length(featureMatrix.test.data)
+
+%%
+% tmp2
+
 %%
 
 order = {};

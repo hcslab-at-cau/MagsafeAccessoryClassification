@@ -24,8 +24,10 @@ for cnt = 1:size(postfix, 1)
         data(cnt2).name = path.accessory(cnt2-prevCnt).name;    
         
         files = dir([path.data, path.accessory(cnt2-prevCnt).name, '/**/*.csv']);
+
         files(contains({files(:).folder}, 'meta')) = [];
         files(contains({files(:).name}, 'Calibration')) = [];
+        files(contains({files(:).name}, 'Charging')) = [];
         
         for cnt3 = 1:length(files)/nSensors 
             idx = (cnt3 - 1) * nSensors;

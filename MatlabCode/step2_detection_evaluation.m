@@ -50,6 +50,52 @@ for cnt = 1:length(data)
     detectionGroundTruth(cnt).fp = sum([cur.trial.falsePositive], 2);
 end
 
+%% For New app ver
+detectionGroundTruth = struct();
+wRange = (-200:50);
+
+for cnt = 1:length(data)
+    accName = data(cnt).name;
+    cur = struct();
+    detectionGroundTruth(cnt).name = accName;
+    nTrials = length(data(cnt).trial);
+    total = 0;
+
+    for cnt2 = 1:nTrials
+        tmp = data(cnt).trial(cnt2);
+        detect = tmp.detect.sample;
+        filter = detected(cnt).trial(cnt2).filter6;
+        attachCnt = 0;
+        detachCnt = 0;    
+        totalDetection = length(find(filter));
+        total = total + length(detect);
+
+        for t = 1:length(detect)
+            detectedTime = detect(t);
+            range = detectedTime + wRange;
+
+            if length(find(filter(range))) > 0
+                if mod(t,2) == 1 % attach
+                    attachCnt = attachCnt + 1;
+                else  % detach
+                    detachCnt = detachCnt + 1;
+                end
+            end
+
+        end
+        cur.trial(cnt2).attachCount = attachCnt;
+        cur.trial(cnt2).detachCount = detachCnt;
+        cur.trial(cnt2).falsePositive = totalDetection - attachCnt - detachCnt;
+
+    end
+    detectionGroundTruth(cnt).total = total;
+    detectionGroundTruth(cnt).value = cur;
+    detectionGroundTruth(cnt).attach = sum([cur.trial.attachCount], 2);
+    detectionGroundTruth(cnt).detach = sum([cur.trial.detachCount], 2);
+    detectionGroundTruth(cnt).fp = sum([cur.trial.falsePositive], 2);
+end
+
+
 %% Plot accuracy
 truePositive = zeros(2, length(detectionGroundTruth)+1);
 falsePositive = zeros(1, length(detectionGroundTruth)+1);

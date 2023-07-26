@@ -1,9 +1,9 @@
 clear;
 
-newApp = false;
+newApp = true;
 path = '../Data/';
 datasetName = 'Default_dataset';
-folderName = 'jaemin3';
+folderName = 'jaemin9';
 
 path = [path, datasetName, '/', folderName];
 
@@ -17,9 +17,10 @@ if newApp == false
 else
     % New app version
     data = func_load_new_data(path, postfix);
+    charging = func_load_charging_status(path, postfix);
 end
 
 run('step1_preprocessing.m')
 run('step2_detection.m')
-run('step2_detection_evaluation.m')
+% run('step2_detection_evaluation.m')
 % run('step3_feature_extraction_ground_truth.m')

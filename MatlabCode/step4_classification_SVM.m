@@ -1,5 +1,5 @@
 % data load
-prefix.train = 'jaemin7_p2p_wSize';
+prefix.train = 'jaemin3_p2p_wSize';
 prefix.test = 'jaemin8_p2p';
 
 train = func_load_feature(prefix.train);
@@ -107,6 +107,15 @@ s1 = sum(predKNN == featureMatrix.test.label) / length(featureMatrix.test.data)
 s2 = sum(predSVM == featureMatrix.test.label) / length(featureMatrix.test.data)
 
 order = {train(:).name};
+%%
+target = 'holder3';
+tIdx = find(ismember(order, target));
+
+tIndices = find((predSVM ~= tIdx) & (featureMatrix.test.label == tIdx));
+% tIndices = find(predSVM == tIdx);
+tProb = probSVM(tIndices, :);
+
+%%
 
 figKNN = figure('Name','KNN','NumberTitle','off');
 figKNN.Position(1:4) = [100, 300, 900, 600];
@@ -125,6 +134,7 @@ c = confusionmat(featureMatrix.test.label, predSVM);
 cm = confusionchart(c, order);
 cm.RowSummary = 'row-normalized';
 % cm.ColumnSummary = 'column-normalized';
+
 
 %% Function for consider charging status
 function result = func_considerCharge(label, pred, prob, totalAcc, chargingAcc)

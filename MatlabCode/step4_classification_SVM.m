@@ -1,21 +1,21 @@
-
 % data load
 prefix.train = 'jaemin4_p2p_wSize';
-prefix.test = 'jaemin8_p2p';
+prefix.test = 'insu1_p2p_wSize';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
 accNames = {data(:).name};
+chargingAcc = [1, 2, 3, 10, 11, 12];
 
 
 % Drop tables
-% dropTable = {'holder3'};
-% accNames = {train.name};
-% 
-% for cnt = 1:length(dropTable)
-%     train(contains(accNames, char(dropTable(cnt)))) = [];
-%     test(contains(accNames, char(dropTable(cnt)))) = [];
-% end
+dropTable = {'holder3'};
+accNames = {train.name};
+
+for cnt = 1:length(dropTable)
+    train(contains(accNames, char(dropTable(cnt)))) = [];
+    test(contains(accNames, char(dropTable(cnt)))) = [];
+end
 
 
 isSame = strcmp(prefix.train, prefix.test);
@@ -53,6 +53,10 @@ for cnt = 1:nAcc
 
     if length(trainIdx) ~= length(train(cnt).feature)
         curTrain = train(cnt).feature(trainIdx(1:length(train(cnt).feature)), :);
+        diffIdx = length(abs(length(trainIdx) - length(train(cnt).feature)));
+
+        curTrain = [curTrain;  NaN(diffIdx,3,'single')];
+
     else
         curTrain = train(cnt).feature(trainIdx, :);
     end
@@ -81,7 +85,7 @@ for cnt = 1:nAcc
 end
 
 result = [];
-template.knn = templateKNN('NumNeighbors', 15, 'Standardize', true);
+template.knn = templateKNN('NumNeighbors', 17, 'Standardize', true);
 template.svm = templateSVM('Standardize',true);
 
 model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
@@ -90,32 +94,70 @@ model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
 model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'learners', template.svm);
 
 
-tmp = predict(model.knn, featureMatrix.test.data);
-s1 = sum(tmp == featureMatrix.test.label) / length(featureMatrix.test.data)
+[predKNN, scoresKNN] = predict(model.knn, featureMatrix.test.data);
+[predSVM, scoresSVM] = predict(model.svm, featureMatrix.test.data);
+probSVM = exp(scoresSVM) ./ sum(exp(scoresSVM),2);
+probKNN = exp(scoresKNN) ./ sum(exp(scoresKNN),2);
 
+%% 
 
-[tmp2, scores] = predict(model.svm, featureMatrix.test.data);
-p = exp(scores) ./ sum(exp(scores),2);
-s2 = sum(tmp2 == featureMatrix.test.label) / length(featureMatrix.test.data)
+predSVM = func_considerCharge(featureMatrix.test.label, predSVM, probSVM, chargingAcc);
+predKNN = func_considerCharge(featureMatrix.test.label, predKNN, probKNN, chargingAcc);
+s1 = sum(predKNN == featureMatrix.test.label) / length(featureMatrix.test.data)
+s2 = sum(predSVM == featureMatrix.test.label) / length(featureMatrix.test.data)
 
-%%
-% tmp2
+order = {train(:).name};
 
-%%
+figKNN = figure('Name','KNN','NumberTitle','off');
+figKNN.Position(1:4) = [100, 450, 900, 600];
+clf
 
-order = {};
+c = confusionmat(featureMatrix.test.label, predKNN);
+cm = confusionchart(c, order);
+cm.RowSummary = 'row-normalized';
+% cm.ColumnSummary = 'column-normalized';
 
-for cnt = 1:length(train)
-    order = [order; train(cnt).name];
+figSVM = figure('Name','SVM','NumberTitle','off');
+figSVM.Position(1:4) = [1000, 450, 900, 600];
+clf
+
+c = confusionmat(featureMatrix.test.label, predSVM);
+cm = confusionchart(c, order);
+cm.RowSummary = 'row-normalized';
+% cm.ColumnSummary = 'column-normalized';
+
+%% Function for consider charging status
+function result = func_considerCharge(label, pred, prob, chargingAcc)
+result = pred;
+
+for cnt = 1:length(prob)
+    p = prob(cnt, :);
+    
+    % Real accessory related to charging & Prediction result is related to charging
+    if ~isempty(find(ismember(chargingAcc, label(cnt)), 1)) && isempty(find(ismember(chargingAcc, result(cnt)), 1)) 
+        % disp(cnt)
+        for k = 2:length(p)
+            pLabel = find(p == min(maxk(p, k)));
+
+            if ~isempty(find(ismember(chargingAcc, pLabel), 1))
+                % disp(['result has been changed 1  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
+                result(cnt) = pLabel;
+                break;
+            end
+        end
+    % Real accessory is not related to charging & Prediction result is related to charging
+    elseif isempty(find(ismember(chargingAcc, label(cnt)), 1)) && ~isempty(find(ismember(chargingAcc, result(cnt)), 1)) 
+        for k = 2:length(p)
+            pLabel = find(p == min(maxk(p, k)));
+
+            if isempty(find(ismember(chargingAcc, pLabel), 1))
+                % disp(['result has been changed 2  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
+                result(cnt) = pLabel;
+                break;
+            end
+        end
+    end
 end
 
-figure('Name','KNN','NumberTitle','off');
-clf
-c = confusionmat(featureMatrix.test.label, tmp);
-cm = confusionchart(c, order)
+end
 
-
-figure('Name','SVM','NumberTitle','off');
-clf
-c = confusionmat(featureMatrix.test.label, tmp2);
-cm = confusionchart(c, order)

@@ -1,21 +1,20 @@
 % data load
-prefix.train = 'jaemin4_p2p_wSize';
-prefix.test = 'insu1_p2p_wSize';
+prefix.train = 'jaemin7_p2p_wSize';
+prefix.test = 'jaemin8_p2p';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
-accNames = {data(:).name};
 chargingAcc = [1, 2, 3, 10, 11, 12];
 
 
 % Drop tables
-dropTable = {'holder3'};
-accNames = {train.name};
-
-for cnt = 1:length(dropTable)
-    train(contains(accNames, char(dropTable(cnt)))) = [];
-    test(contains(accNames, char(dropTable(cnt)))) = [];
-end
+% dropTable = {'holder3'};
+% accNames = {train.name};
+% 
+% for cnt = 1:length(dropTable)
+%     train(contains(accNames, char(dropTable(cnt)))) = [];
+%     test(contains(accNames, char(dropTable(cnt)))) = [];
+% end
 
 
 isSame = strcmp(prefix.train, prefix.test);
@@ -91,7 +90,7 @@ template.svm = templateSVM('Standardize',true);
 model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
     'Learners', template.knn);
 
-model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'learners', template.svm);
+model.svm = fitcecoc(featureMatrix.train.data, featureMatrix.train.label);
 
 
 [predKNN, scoresKNN] = predict(model.knn, featureMatrix.test.data);
@@ -100,16 +99,17 @@ probSVM = exp(scoresSVM) ./ sum(exp(scoresSVM),2);
 probKNN = exp(scoresKNN) ./ sum(exp(scoresKNN),2);
 
 %% 
+totalAcc = char({train.name});
 
-predSVM = func_considerCharge(featureMatrix.test.label, predSVM, probSVM, chargingAcc);
-predKNN = func_considerCharge(featureMatrix.test.label, predKNN, probKNN, chargingAcc);
+predSVM = func_considerCharge(featureMatrix.test.label, predSVM, probSVM, totalAcc, chargingAcc);
+predKNN = func_considerCharge(featureMatrix.test.label, predKNN, probKNN, totalAcc, chargingAcc);
 s1 = sum(predKNN == featureMatrix.test.label) / length(featureMatrix.test.data)
 s2 = sum(predSVM == featureMatrix.test.label) / length(featureMatrix.test.data)
 
 order = {train(:).name};
 
 figKNN = figure('Name','KNN','NumberTitle','off');
-figKNN.Position(1:4) = [100, 450, 900, 600];
+figKNN.Position(1:4) = [100, 300, 900, 600];
 clf
 
 c = confusionmat(featureMatrix.test.label, predKNN);
@@ -118,7 +118,7 @@ cm.RowSummary = 'row-normalized';
 % cm.ColumnSummary = 'column-normalized';
 
 figSVM = figure('Name','SVM','NumberTitle','off');
-figSVM.Position(1:4) = [1000, 450, 900, 600];
+figSVM.Position(1:4) = [1000, 300, 900, 600];
 clf
 
 c = confusionmat(featureMatrix.test.label, predSVM);
@@ -127,7 +127,7 @@ cm.RowSummary = 'row-normalized';
 % cm.ColumnSummary = 'column-normalized';
 
 %% Function for consider charging status
-function result = func_considerCharge(label, pred, prob, chargingAcc)
+function result = func_considerCharge(label, pred, prob, totalAcc, chargingAcc)
 result = pred;
 
 for cnt = 1:length(prob)
@@ -141,7 +141,18 @@ for cnt = 1:length(prob)
 
             if ~isempty(find(ismember(chargingAcc, pLabel), 1))
                 % disp(['result has been changed 1  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
-                result(cnt) = pLabel;
+                % disp([num2str(cnt), '_ ', num2str(pLabel)])
+                tmp = pLabel;
+                if length(pLabel) ~= 1
+                    for cnt2 = 1:length(pLabel)
+                        if ~isempty(find(ismember(chargingAcc, pLabel(cnt2)), 1))
+                            tmp = pLabel(cnt2);
+                            break;
+                        end
+                    end
+                end
+
+                result(cnt) = tmp;
                 break;
             end
         end
@@ -152,6 +163,7 @@ for cnt = 1:length(prob)
 
             if isempty(find(ismember(chargingAcc, pLabel), 1))
                 % disp(['result has been changed 2  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
+                % disp([num2str(cnt), '_ ', num2str(pLabel)])
                 result(cnt) = pLabel;
                 break;
             end

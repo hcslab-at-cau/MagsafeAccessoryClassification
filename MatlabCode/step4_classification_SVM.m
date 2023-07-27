@@ -1,6 +1,6 @@
 % data load
-prefix.train = 'jaemin3_p2p_wSize';
-prefix.test = 'jaemin8_p2p';
+prefix.train = 'jaemin4_p2p_wSize';
+prefix.test  = 'jaemin7_p2p_wSize';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
@@ -15,6 +15,13 @@ chargingAcc = [1, 2, 3, 10, 11, 12];
 %     train(contains(accNames, char(dropTable(cnt)))) = [];
 %     test(contains(accNames, char(dropTable(cnt)))) = [];
 % end
+
+% include only
+% includeTable = {'charger2', 'holder3'};
+% accNames = {train.name};
+% 
+% train = train(ismember(accNames, includeTable));
+% test = test(ismember(accNames, includeTable));
 
 
 isSame = strcmp(prefix.train, prefix.test);
@@ -84,7 +91,8 @@ for cnt = 1:nAcc
 end
 
 result = [];
-template.knn = templateKNN('NumNeighbors', 17, 'Standardize', true);
+% template.knn = templateKNN('NumNeighbors', 21);
+template.knn = templateKNN('NumNeighbors', 21, 'Standardize',true);
 template.svm = templateSVM('Standardize',true);
 
 model.knn = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, ...
@@ -113,8 +121,7 @@ tIdx = find(ismember(order, target));
 
 tIndices = find((predSVM ~= tIdx) & (featureMatrix.test.label == tIdx));
 % tIndices = find(predSVM == tIdx);
-tProb = probSVM(tIndices, :);
-
+tProb = probKNN(tIndices, :);
 %%
 
 figKNN = figure('Name','KNN','NumberTitle','off');

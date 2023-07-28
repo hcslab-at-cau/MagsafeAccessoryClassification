@@ -2,10 +2,10 @@
 chargingAcc = {charging(:).name};
 totalAcc = {data(:).name};
 
-accName = 'charger1';
+accName = 'holder3';
 showTrials = 1:1;
 
-fig = figure(40);
+fig = figure('Name', 'diff values');
 fig.Position(3:4) = [1200, 300];
 clf
 nRow = 1;
@@ -29,6 +29,4 @@ for cnt = 1:length(showTrials)
     stem(find(filter), mag.diffSum(filter), 'LineStyle', '-')
     stem(chargeTime, mag.diffSum(chargeTime), 'filled')
     legend({'feature(diff sum)', 'Ground-truth', 'Estimated', 'charge time'})
-    
-
 end

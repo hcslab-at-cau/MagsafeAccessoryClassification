@@ -1,6 +1,6 @@
 % data load
-prefix.train = 'jaemin4_p2p_wSize';
-prefix.test  = 'jaemin7_p2p_wSize';
+prefix.train = 'jaemin9_p2p';
+prefix.test  = 'jaemin9_p2p';
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
@@ -30,7 +30,7 @@ nAcc = length(train);
 nTrainTotal = length(train(1).feature);
 nTestTotal = length(test(1).feature);
 
-nTrainCur = 50;
+nTrainCur = 25;
 if isSame
     nTrainCur = min(nTrainTotal - 1, nTrainCur);
     nTestCur = nTrainTotal - nTrainCur;
@@ -159,7 +159,7 @@ for cnt = 1:length(prob)
             if ~isempty(find(ismember(chargingAcc, pLabel), 1))
                 % disp(['result has been changed 1  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
                 % disp([num2str(cnt), '_ ', num2str(pLabel)])
-                tmp = pLabel;
+                tmp = pLabel;   
                 if length(pLabel) ~= 1
                     for cnt2 = 1:length(pLabel)
                         if ~isempty(find(ismember(chargingAcc, pLabel(cnt2)), 1))

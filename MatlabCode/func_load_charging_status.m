@@ -2,6 +2,8 @@ function result = func_load_charging_status(root, postfix)
 data = struct();
 
 prevCnt = 0;
+cIdx = 1;
+
 for cnt = 1:size(postfix, 1)
     path.root = root;
     path.postfix = deblank(postfix(cnt, :));
@@ -22,7 +24,7 @@ for cnt = 1:size(postfix, 1)
         end
         
 
-        data(cnt2).name = path.accessory(cnt2-prevCnt).name;    
+        data(cIdx).name = path.accessory(cnt2-prevCnt).name;    
         
         files = dir([path.data, path.accessory(cnt2-prevCnt).name, '/**/*.csv']);
 
@@ -34,8 +36,9 @@ for cnt = 1:size(postfix, 1)
             idx = indices(cnt3);
 
             tmp = csvread([files(idx).folder, '/', files(idx).name], 1, 0);
-            data(cnt2).trial(cnt3).('charging').sample = tmp(:, 1);
-        end        
+            data(cIdx).trial(cnt3).('charging').sample = tmp(:, 1);
+        end
+        cIdx = cIdx + 1;
     end
     prevCnt = prevCnt + length(path.accessory);
 end

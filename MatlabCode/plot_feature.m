@@ -30,7 +30,8 @@ for cnt = 1:length(values)
     label = strvcat(label, [values(cnt).name]);
 end
 
-figure(featureFigNum)
+fig = figure(featureFigNum);
+fig.Position(1:4) = [400, 400, 800, 700];
 clf
 
 
@@ -45,7 +46,7 @@ for cnt = 1:length(values)
     hold on
 end
 
-
+legend(label)
 xlabel('x')
 ylabel('y')
 zlabel('z')

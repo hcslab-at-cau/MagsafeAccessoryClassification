@@ -1,3 +1,4 @@
+if newApp == false
 detectionGroundTruth = struct();
 groundTruth = func_load_ground_truth(datasetName, folderName);
 wRange = (-100:100);
@@ -49,8 +50,11 @@ for cnt = 1:length(data)
     detectionGroundTruth(cnt).detach = sum([cur.trial.detachCount], 2);
     detectionGroundTruth(cnt).fp = sum([cur.trial.falsePositive], 2);
 end
+end
 
 %% For New app ver
+
+if newApp == true
 detectionGroundTruth = struct();
 wRange = (-200:50);
 
@@ -94,7 +98,7 @@ for cnt = 1:length(data)
     detectionGroundTruth(cnt).detach = sum([cur.trial.detachCount], 2);
     detectionGroundTruth(cnt).fp = sum([cur.trial.falsePositive], 2);
 end
-
+end
 
 %% Plot accuracy
 truePositive = zeros(2, length(detectionGroundTruth)+1);

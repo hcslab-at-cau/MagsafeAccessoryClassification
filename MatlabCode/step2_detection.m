@@ -8,6 +8,8 @@ corrThreshold = .5;
 dAngleThreshold = .01;
 
 for cnt = 1:length(data)
+    nTrials = length(data(cnt).trial);
+
     for cnt2 = 1:nTrials
         mag = data(cnt).trial(cnt2).mag;
         acc = data(cnt).trial(cnt2).acc;

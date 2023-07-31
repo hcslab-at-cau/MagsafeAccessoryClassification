@@ -1,14 +1,31 @@
-% 임의의 데이터 생성
-data = rand(1, 100); % 1x100 크기의 무작위 벡터를 생성합니다.
+tmp = data(accId).trial(trialId);
+mag = tmp.mag;
 
-% 그래프 초기화
-figure; % 새로운 그래프 창을 생성합니다.
-h = plot(data(1)); % 데이터의 첫 번째 요소를 사용하여 초기 그래프를 생성합니다.
-hold on; % 현재 그래프를 유지하고, 다음 요소들이 추가되도록 설정합니다.
 
-% 데이터 천천히 plotting
-for i = 2:length(data)
-    set(h, 'YData', data(1:i)); % 그래프의 Y데이터를 갱신합니다.
-    drawnow; % 그래프를 갱신하도록 요청합니다.
-    pause(0.01); % 0.1초 동안 일시 중지합니다. 이 값을 조절하여 그래프 그리는 속도를 조절할 수 있습니다.
+chargnigLatency = 200;
+accStatus = false;
+detectPoints = -1;
+start = 50;
+
+% Thresholds
+magThreshold = 1;
+cfarThreshold = .9999;
+corrThreshold = .5;
+dAngleThreshold = .01;
+
+
+for t = 1 + start:length(mag.sample)
+    
+
+
+
+end
+
+
+function result = func_detection(mag, gyro, acc)
+[b.mag, b.mag]
+
+if 
+
+result = true;
 end

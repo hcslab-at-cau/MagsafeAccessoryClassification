@@ -1,4 +1,9 @@
-function [model, pred, prob] = func_train_model(templateModel, featureMatrix, chargingAcc)
+function [model, pred, prob] = func_train_model(templateModel, featureMatrix, chargingAcc, chargingState)
+if ~exist('chargingState', 'var')
+    chargingState = true;
+end
+
+
 totalAcc = unique(featureMatrix.test.label);
 
 % Training model
@@ -9,7 +14,9 @@ model = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners'
 prob = exp(scores) ./ sum(exp(scores),2);
 
 % Consider charging status
-pred = func_considerCharge(featureMatrix.test.label, pred, prob, totalAcc, chargingAcc);
+if chargingState 
+    pred = func_considerCharge(featureMatrix.test.label, pred, prob, totalAcc, chargingAcc);
+end
 
     function result = func_considerCharge(label, pred, prob, totalAcc, chargingAcc)
     result = pred;

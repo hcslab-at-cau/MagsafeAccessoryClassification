@@ -20,7 +20,7 @@ else
     charging = func_load_charging_status(path, postfix);
 end
 
-run('step1_preprocessing.m')
-run('step2_detection.m')
+% run('step1_preprocessing.m')
+% run('step2_detection.m')
 % run('step2_detection_evaluation.m')
 % run('step3_feature_extraction_ground_truth.m')

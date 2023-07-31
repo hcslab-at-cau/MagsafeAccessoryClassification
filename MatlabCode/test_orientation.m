@@ -1,8 +1,8 @@
 run('step0_load_data.m')
 
 path = '../Data/';
-datasetName = 'Default_dataset';
-orientFolder = 'jaemin9_orientation';
+datasetName = 'Orientation_dataset';
+orientFolder = 'jaemin2';
 path = [path, datasetName, '/', orientFolder];
 
 postfix = char({'objects'});
@@ -21,5 +21,5 @@ run('step2_detection.m')
 run('step2_detection_evaluation.m')
 run('step3_feature_extraction_ground_truth.m')
 
-% featureName = [folderName, '_p2p'];
-% run('step4_classification.m')
+featureName = [folderName, '_p2p'];
+run('step4_classification.m')

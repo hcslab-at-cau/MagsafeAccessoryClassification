@@ -4,21 +4,28 @@ if exist('featureName', 'var')
     prefix.train = featureName;
     prefix.test  = featureName;
     nTrainCur = 25;
+    clearvars featureName
 else
     % prefix.train = 'jaemin9_p2p_orient';
-    prefix.train = 'jaemin6_p2p';
+    prefix.train = 'jaemin3_p2p';
     prefix.test  = 'jaemin8_p2p';
     nTrainCur = 50;
 end
 
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
-chargingInfo = false;
+chargingInfo = true;
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
 
 
-orientTrain = func_load_feature('jaemin');
+% Orientation test
+addTrain = func_load_feature('orientation_p2p');
+
+for cnt = 1:length(addTrain)
+    idx = find(ismember({train.name}, addTrain(cnt).name));
+    train(idx) = addTrain(cnt);
+end
 
 
 % Table drop or include
@@ -28,7 +35,7 @@ orientTrain = func_load_feature('jaemin');
 
 
 % Template init
-template.knn = templateKNN('NumNeighbors', 21, 'Standardize',false);
+template.knn = templateKNN('NumNeighbors', 11, 'Standardize',true);
 template.svm = templateSVM('Standardize', false);
 template.randomforest = templateTree('MaxNumSplits', 7);
 
@@ -79,7 +86,3 @@ title('Random Forest');
 
 % view(model.randomforest.BinaryLearners{1}.Trained{1},'Mode','graph')
 
-
-if exist('featureName', 'var')
-    clearvars featureName
-end

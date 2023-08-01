@@ -170,21 +170,25 @@ for cnt = 1:length(data)
 end
 toc
 %% plot features
+% featureName = folderName;
+featureName = 'orientation';
+
 featureFigNum = 40;
 usingGroundTruth = true;
 
 feature = featureUnit;
 run('plot_feature.m')
-func_save_feature(values, [folderName, '_p2p_orient'])
+func_save_feature(values, [featureName, '_p2p'])
+% func_save_feature(values, [folderName, '_p2p_orient'])
 
 featureFigNum = featureFigNum + 1;
 
 feature = featureRange;
 run('plot_feature.m')
-func_save_feature(values, [folderName, '_p2pRange_orient'])
+func_save_feature(values, [featureName, '_p2pRange'])
 
 featureFigNum = featureFigNum + 1;
 
 feature = featureRangeRange;
 run('plot_feature.m')
-func_save_feature(values, [folderName, '_r2r_orient'])
+func_save_feature(values, [featureName, '_r2r'])

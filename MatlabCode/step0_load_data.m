@@ -1,9 +1,9 @@
 clear;
 
-newApp = true;
+newApp = false;
 path = '../Data/';
 datasetName = 'Default_dataset';
-folderName = 'jaemin9';
+folderName = 'jaemin6';
 
 path = [path, datasetName, '/', folderName];
 

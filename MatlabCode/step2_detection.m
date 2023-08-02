@@ -39,11 +39,16 @@ for cnt = 1:length(data)
         % Filter 4 : There should be sudden variation in the magnitude of acc
         cur.filter4 = cur.filter3;
         for cnt3 = find(cur.filter4)'
-            range = cnt3 + (-wSize:-1);
-            wrange = cnt3 + (-5:5);
+            wrange = cnt3 + (-5:0);
             cur.filter4(cnt3) = 0;
 
             for cnt4 = wrange
+                range = cnt4 + (-wSize:-1);
+
+                if range(1) < 1
+                    range = 1:range(end);
+                end
+
                 if(func_CFAR(acc.magnitude(range), acc.magnitude(cnt4), cfarThreshold))
                     cur.filter4(cnt3) = 1;
                     break;
@@ -57,7 +62,7 @@ for cnt = 1:length(data)
 
         % Filter 5 : the delta angles measured from mag and gyro should be
         % different to each other
-        cur.filter5 = cur.filter4;
+        cur.filter5 = cur.filter3;
         %cur.filter6 = cur.filter4;
         for cnt3 = find(cur.filter5)'
             % range = cnt3 + 1 + (-wSize:-1);

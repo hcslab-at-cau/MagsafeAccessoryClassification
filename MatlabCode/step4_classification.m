@@ -8,7 +8,7 @@ if exist('featureName', 'var')
 else
     % prefix.train = 'jaemin9_p2p_orient';
     prefix.train = 'jaemin9_p2p';
-    prefix.test  = 'jaemin3_p2p';
+    prefix.test  = 'jaemin4_p2p';
     nTrainCur = 50;
 end
 
@@ -33,68 +33,55 @@ test = func_load_feature(prefix.test);
 % tableInfo = [{'include'}, chargingAcc];
 [featureMatrix, totalAcc] = func_make_feature_matrix(train, test, nTrainCur, strcmp(prefix.train, prefix.test));
 
+% totalAcc{end + 1} = 'non';
 
 % Template init
 template.knn = templateKNN('NumNeighbors', 11, 'Standardize',true);
 template.svm = templateSVM('Standardize', false);
 template.randomforest = templateTree('MaxNumSplits', 7);
+models = fieldnames(template);
 
 
-% Train models
-[chargerModel.knn, predKNN, probKNN] = func_train_model(template.knn, featureMatrix, chargingAcc, chargingInfo);
-[chargerModel.svm, predSVM, probSVM] = func_train_model(template.svm, featureMatrix, chargingAcc, chargingInfo);
-[chargerModel.randomforest, predRandomForest, probRandomForest] = func_train_model(template.randomforest, featureMatrix, chargingAcc, chargingInfo);
+% Train & predict
+for cnt2 = 1:length(models)
+    modelName = char(models(cnt2));
 
+    model.(modelName) = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.(modelName));
+    [pred.(modelName), prob.(modelName)] = func_predict(model.(modelName), featureMatrix.test, chargingAcc, true);
+end
 
-% Plot confusion matrix
+fig = figure('Name', ['train : ', prefix.train, '  test : ', prefix.test], 'NumberTitle','off');
+fig.Position(1:4) = [200, 0, 1600, 1600]; 
+
 nRow = 2;
 nCol = 2;
 
-% Define a single figure
-fig = figure('Name', ['train : ', prefix.train, '  test : ', prefix.test], 'NumberTitle','off');
-fig.Position(1:4) = [200, 0, 1600, 1600];  % increase width to accommodate 3 subplots
+accuracys = [];
+for cnt2 = 1:length(models)
+    modelName = char(models(cnt2));
 
-% Accuracy of KNN
-s1 = sum(strcmp(predKNN, featureMatrix.test.label)) / length(featureMatrix.test.label)
+    s = sum(strcmp(pred.(modelName), featureMatrix.test.label)) / length(featureMatrix.test.label);
+    accuracys = [accuracys;s];
 
-% Plot confusion matrix for KNN result
-subplot(nRow, nCol, 1); 
-c = confusionmat(featureMatrix.test.label, predKNN, "Order", totalAcc);
-cm = confusionchart(c, totalAcc);
-cm.RowSummary = 'row-normalized';
-title('KNN');
+    subplot(nRow, nCol, cnt2); 
+    c = confusionmat(featureMatrix.test.label, pred.(modelName), "Order", totalAcc);
+    cm = confusionchart(c, totalAcc);
 
-% Accuracy of SVM
-s2 = sum(strcmp(predSVM, featureMatrix.test.label)) / length(featureMatrix.test.label)
+    cm.RowSummary = 'row-normalized';
+    title(modelName);
+end
 
-% Plot confusion matrix for SVM result
-subplot(nRow, nCol, 2); 
-c = confusionmat(featureMatrix.test.label, predSVM, "Order", totalAcc);
-cm = confusionchart(c, totalAcc);
-cm.RowSummary = 'row-normalized';
-title('SVM');
+mean(accuracys)
 
-% Accuracy of Random forest
-s3 = sum(strcmp(predRandomForest, featureMatrix.test.label)) / length(featureMatrix.test.label)
-
-% Plot confusion matrix for random forest result
-subplot(nRow, nCol, 3); 
-c = confusionmat(featureMatrix.test.label, predRandomForest, "Order", totalAcc);
-cm = confusionchart(c, totalAcc);
-cm.RowSummary = 'row-normalized';
-title('Random Forest');
-
-% view(model.randomforest.BinaryLearners{1}.Trained{1},'Mode','graph')
-return
+return;
 %% Split model to charging and non-charging
-clear;
 
-prefix.train = 'jaemin9_p2p';
-prefix.test  = 'jaemin3_p2p';
-nTrainCur = 50;
+% prefix.train = 'jaemin9_p2p';
+% prefix.test  = 'jaemin4_p2p';
+% nTrainCur = 50;
 
-train = func_load_feature(prefix.train);
-test = func_load_feature(prefix.test);
+% train = func_load_feature(prefix.train);
+% test = func_load_feature(prefix.test);
 
 accessory.charging = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
@@ -117,9 +104,10 @@ otherTest = test(ismember({test.name}, accessory.other));
 template.knn = templateKNN('NumNeighbors', 11, 'Standardize',true);
 template.svm = templateSVM('Standardize', false);
 template.randomforest = templateTree('MaxNumSplits', 7);
-models = {'knn', 'svm', 'randomforest'};
 
+models = fieldnames(template);
 
+% Train & predict
 for cnt = 1:length(accessorys)
     accName = char(accessorys(cnt));
 
@@ -134,21 +122,23 @@ end
 nRow = 2;
 nCol = 2;
 
+accuracys = [];
+
+% Plot confusion matrix
 for cnt = 1:length(accessorys)
-    figure(20 + cnt)
+    accName = char(accessorys(cnt));
+    figure('Name', [accName, '_confusion matrix'])
     clf
 
     for cnt2 = 1:length(models)
         modelName = char(models(cnt2));
-        disp(modelName)
 
-        % s = sum(strcmp(pred(cnt).(modelName), featureMatrix.test.label)) / length(featureMatrix.test.label)
+        s = sum(strcmp(pred(cnt).(modelName), featureMatrix.(accName).test.label)) / length(featureMatrix.(accName).test.label);
+        accuracys = [accuracys;s];
 
         subplot(nRow, nCol, cnt2); 
-        % c = confusionmat(featureMatrix.(accName).test.label, pred(cnt).(modelName), "Order", accessory.(char(accessorys(cnt))));
-        c = confusionmat(featureMatrix.(accName).test.label, pred(cnt).(modelName));
-        % cm = confusionchart(c, accessory.(char(accessorys(cnt))));
-        cm = confusionchart(c);
+        c = confusionmat(featureMatrix.(accName).test.label, pred(cnt).(modelName), "Order", accessory.(accName));
+        cm = confusionchart(c, accessory.(accName));
 
         cm.RowSummary = 'row-normalized';
         title(modelName);
@@ -156,7 +146,7 @@ for cnt = 1:length(accessorys)
 end
 
 
-
+mean(accuracys)
 
 return
 %% Orientation labeling test

@@ -3,6 +3,9 @@ if ~exist('chargingState', 'var')
     chargingState = true;
 end
 
+totalAcc = unique(testData.label);
+totalAcc{end + 1} = 'non';
+
 [pred, scores] = predict(model, testData.data);
 
 % Get probability of each label
@@ -70,6 +73,13 @@ end
                 end
             end
         end
+
+        idx = find(ismember(totalAcc, result(cnt)));
+
+        % if prob(cnt, idx) < 0.12
+        %     result(cnt) = {'non'};
+        % end
+
     end
     
     end

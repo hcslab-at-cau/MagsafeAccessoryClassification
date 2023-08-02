@@ -39,11 +39,13 @@ for cnt = 1:length(data)
         % Filter 4 : There should be sudden variation in the magnitude of acc
         cur.filter4 = cur.filter3;
         for cnt3 = find(cur.filter4)'
-            range = cnt3 + (-5:5);
+            range = cnt3 + (-wSize:-1);
+            wrange = cnt3 + (-5:5);
+            cur.filter4(cnt3) = 0;
 
-            for cnt4 = range
+            for cnt4 = wrange
                 if(func_CFAR(acc.magnitude(range), acc.magnitude(cnt4), cfarThreshold))
-                    cur.filter(cnt3) = 1;
+                    cur.filter4(cnt3) = 1;
                     break;
                 end
             end

@@ -1,6 +1,7 @@
-testModel = model.knn;
-% testData = [1, 2, 2];
-testData = [-10, 70, 11];
+testModel = model(2).knn;
+testData = [1, 2, 2];
+testData = [-20, 44, 11]
+% testData = [-10, 70, 11];
 
 [testPred, scores] = predict(testModel, testData);
 

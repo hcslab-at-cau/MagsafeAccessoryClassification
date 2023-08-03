@@ -1,3 +1,4 @@
+clear;
 % Load data
 if exist('featureName', 'var')
     disp('exist featureName')
@@ -7,8 +8,8 @@ if exist('featureName', 'var')
     clearvars featureName
 else
     % prefix.train = 'jaemin9_p2p_orient';
-    prefix.train = 'jaemin9_p2p';
-    prefix.test  = 'jaemin4_p2p';
+    prefix.train = 'jaemin8_p2p';
+    prefix.test  = 'jaemin3_p2p';
     nTrainCur = 50;
 end
 
@@ -17,7 +18,6 @@ chargingInfo = true;
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
-
 
 % Orientation test
 % addTrain = func_load_feature('orientation_p2p');
@@ -72,7 +72,6 @@ for cnt2 = 1:length(models)
 end
 
 mean(accuracys)
-
 return;
 %% Split model to charging and non-charging
 
@@ -148,5 +147,40 @@ end
 
 mean(accuracys)
 
-return
 %% Orientation labeling test
+testLabels = featureMatrix.test.label;
+totalAcc = unique(testLabels);
+selectModel = 'svm';
+
+probs = [];
+preds = {};
+
+for cnt = 1:length(pred.(selectModel))
+    result = char(pred.(selectModel)(cnt));
+    idx = find(ismember(totalAcc, result), 1);
+    label= char(testLabels(cnt));
+
+    if strcmp(result, label)
+        probs(end + 1) = prob.(selectModel)(cnt, idx);
+        preds(end + 1) = pred.(selectModel)(cnt);
+    end
+end
+
+k = mean(probs)
+% k = 0.17
+lValue = length(find(probs < k))
+gValue = length(find(probs >= k))
+length(probs)
+
+
+lIdx = find(probs < k);
+badPreds = preds(lIdx);
+badProbs = probs(lIdx);
+bad = struct();
+
+for cnt = 1:length(totalAcc)
+    bad.(char(totalAcc(cnt))) = length(find(ismember(badPreds, totalAcc(cnt))));
+end
+bad
+
+mean(badProbs)

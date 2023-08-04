@@ -1,3 +1,9 @@
+accId = 1;
+trialId = 1;
+wSize = 100;
+rate = 100;
+order = 4;
+
 tmp = data(accId).trial(trialId);
 accName = data(accId).name;
 
@@ -6,6 +12,7 @@ gyro = tmp.gyro;
 acc = tmp.acc;
 
 % For charging status
+chargingAcc = {charging.name};
 chargingStatus = zeros(1, length(mag.sample));
 if ~isempty(find(ismember(chargingAcc, accName))) % Not a charging status
     idx = find(ismember(chargingAcc, accName));
@@ -31,20 +38,23 @@ for t = 2:start
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
 end
 
-for t = 1 + start:length(mag.sample)
+for t = 1 + start:300
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
     range = t + (-interval:-1);
 
-    [flag, points] = func_detection(mag, gyro, acc, ~);
+    [flag, points] = func_detection(mag, gyro, acc, range, status);
     
+    disp(t)
+
     if startPoint == -1 && flag
         startPoint = points(1);
+        
     elseif flag
         detectionPoints = unique([detectionPoints,points]);
     end
 
 
-    if startPoint + interval <= t
+    if startPoint ~= -1 && startPoint + interval <= t
         % select points & feature extractions
         magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval, :)).^2, 2);
         refPoint = find(magnitude == max(magnitude(detectionPoints)), 1);
@@ -55,6 +65,7 @@ for t = 1 + start:length(mag.sample)
         
         startPoint = -1;
         detectionPoints = [];
+        
     end
 
     if refPoint ~= -1 && refPoint + chargingLatency <= t
@@ -69,6 +80,7 @@ end
 function [result, detectPoints] = func_detection(mag, gyro, acc, range, status)
 result = false;
 detectPoints = [];
+interval = 100;
 
 % Detection thresholds
 magThreshold = 1;
@@ -84,9 +96,15 @@ order = 4;
 
 
 % Filter 1 : Magnitude > 1
-magnitude.mag = sum(filtfilt(b.magh, a.magh, mag.sample(range, :)).^2, 2);
-filter1 = magnitude.mag > magThreshold;
+wRange = -100 + range(1):range(end);
 
+if wRange(1) < 1
+    wRange = 1:wRange(end);
+end
+
+magnitude.mag = sum(filtfilt(b.magh, a.magh, mag.sample(wRange, :)).^2, 2);
+
+filter1 = magnitude.mag(wRange(end-99:end)) > magThreshold;
 if isempty(find(filter1))
     return
 end
@@ -100,26 +118,33 @@ end
 % Filter 3 : mag magnitude CFAR 
 filter3 = filter2;
 for cnt3 = find(filter3)'
-    range = cnt3 + (-100:-1);
-    filter3(cnt3) = func_CFAR(magnitude.mag(range), magnitude.mag(cnt3), cfarThreshold);
+    innerRange = cnt3 + (-100:-1);
+    
+    filter3(cnt3) = func_CFAR(magnitude.mag(innerRange), magnitude.mag(cnt3), cfarThreshold);
+end
+
+if isempty(find(filter3))
+    return
 end
 
 % Filter 4 : Acc magnitude CFAR
+magnitude.acc = sum(filtfilt(b.acch, a.acch, acc.sample(wRange, :)).^2, 2);
+
 filter4 = filter3;
 for cnt3 = find(filter4)'
+    filter4(cnt3) = 0;
     outerRange = cnt3 + (-5:0);
 
     for cnt4 = outerRange
-        innerRange = cnt4 + (-100:-1);
+        innerRange = interval + cnt4 + (-100:-1);
 
         if innerRange < 1
             innerRange = 1:innerRange(end);
         end
 
-        if innerRange > length(mag.sample)
-            innerRange = innerRange(1):length(mag.sample);
+        if innerRange > length(range)
+            innerRange = innerRange(1):length(range);
         end
-
 
         if(func_CFAR(acc.magnitude(innerRange), acc.magnitude(cnt4), cfarThreshold))
             filter4(cnt3) = 1;
@@ -133,4 +158,5 @@ if isempty(find(filter4))
 end
 
 result = true;
+detectPoints = find(filter4)';
 end

@@ -1,4 +1,4 @@
-function [pred, prob] = func_predict(model, testData, chargingAcc, chargingState)
+function [pred, prob, scores] = func_predict(model, testData, chargingAcc, chargingState)
 if ~exist('chargingState', 'var')
     chargingState = true;
 end

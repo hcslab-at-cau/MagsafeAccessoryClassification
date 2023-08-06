@@ -1,5 +1,5 @@
-accId = 3;
-trialId = 3;
+accId = 2;
+trialId = 8;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -38,22 +38,32 @@ extractInterval = (-wSize:wSize);
 
 [b.magh, a.magh] = butter(order, 10/rate * 2, 'high');
 mag.dAngle = zeros(length(mag.sample), 1);
+mag.inferAngle = zeros(length(mag.sample), 1);
 
 for t = 2:start
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
+    euler = gyro.sample(t, :) * 1/rate;
+    rotm = eul2rotm(euler, 'XYZ');
+    inferredMag = (rotm\(mag.sample(t-1, :))')';
+    
+    mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
 end
 
 for t = 1 + start:length(mag.sample)
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
-    % mag.inferredMag = r
+    euler = gyro.sample(t, :) * 1/rate;
+    rotm = eul2rotm(euler, 'XYZ');
+    inferredMag = (rotm\(mag.sample(t-1, :))')';
     
+    mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
+
     if mod(t, 5) ~= 0
         continue;
     end
 
     range = t + (-interval:-1);
     
-    [flag, points] = func_detection(mag, gyro, acc, range, accessoryStatus, t);
+    [flag, points] = func_detection(mag, acc, range, accessoryStatus, t);
     
     % Detect accessory attach or detach
     if flag
@@ -75,7 +85,9 @@ for t = 1 + start:length(mag.sample)
         magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
         tarIdx = curPoints - startPoint + 1;
         
-        refPoint = startPoint + find(magnitude == max(magnitude(tarIdx)));
+        startPoint + tarIdx
+    
+        refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
 
         % refPoint
         % t
@@ -84,7 +96,6 @@ for t = 1 + start:length(mag.sample)
         startPoint = -1;
         prevPoints = curPoints;
         curPoints = [];
-        totalDetections(end + 1) = refPoint;
     end
 
     % Feature extraction using charging status
@@ -101,20 +112,16 @@ for t = 1 + start:length(mag.sample)
             [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
         end
 
-        featureValue
-        refPoint
-        mean(distance)
-        accessoryStatus = ~accessoryStatus;
+        % featureValue
+        % refPoint
+        % mean(distance)
+
+        if (accessoryStatus == false && mean(distance) < 10) || (accessoryStatus == true)
+            accessoryStatus = ~accessoryStatus;
+            totalDetections(end + 1) = refPoint;
+        end
         
         refPoint = -1;
-
-        % if mean(distance) < 10
-        %     featureValue
-        % 
-        %     accessorystatus = ~accessorystatus;
-        % 
-        %     refPoint = -1;
-        % end
     end
 end
 
@@ -131,10 +138,10 @@ if refPoint ~= -1
         [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
     end
 
-    featureValue
-    refPoint
-    mean(distance)
-    accessoryStatus = ~accessoryStatus;
+    if (accessoryStatus == false && mean(distance) < 10) || (accessoryStatus == true)
+        accessoryStatus = ~accessoryStatus;
+        totalDetections(end + 1) = refPoint;
+    end
     
     refPoint = -1;
 end
@@ -156,7 +163,7 @@ stem(totalDetections, mag.sample(totalDetections), 'filled')
 
 
 
-function [result, detectPoints] = func_detection(mag, acc, range, status, inferredMag)
+function [result, detectPoints] = func_detection(mag, acc, range, status, t)
 result = false;
 detectPoints = [];
 interval = 100;
@@ -164,7 +171,7 @@ interval = 100;
 % Detection thresholds
 magThreshold = 1;
 cfarThreshold = .9999;
-corrThreshold = .5;
+corrThreshold = .9;
 dAngleThreshold = .01;
 
 % High-pass filter args
@@ -238,11 +245,24 @@ end
 
 filter5 = filter4;
 for cnt = find(filter5)'
+    innerRange = range(1) - 1 + cnt + (-5:5);
 
+    if innerRange(1) < 1
+        innerRange = 1:innerRange(end);
+    end
+
+    if innerRange(end) > t-1
+        innerRange = innerRange(1):t-1;
+    end
+
+    c = corr(mag.dAngle(innerRange), mag.inferAngle(innerRange));
+    filter5(cnt) = c > corrThreshold;
 end
 
-
+if isempty(find(filter5))
+    return
+end
 
 result = true;
-detectPoints = find(filter4)' + range(1) - 1;
+detectPoints = find(filter5)' + range(1) - 1;
 end

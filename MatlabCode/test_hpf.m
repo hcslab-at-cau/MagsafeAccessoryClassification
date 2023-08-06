@@ -4,16 +4,16 @@ order = 4;
 Wn = [5 15]/rate *2;
 [b.bp, a.bp] = butter(order, Wn, 'bandpass');
 
-accId = 4;
-trialId = 1;
+accId = 2;
+trialId = 8;
 disp(data(accId).name)
 
 mag = data(accId).trial(trialId).mag.sample;
 % range = 1:length(mag);
-range = 580:630;
+range = 2800:3200;
 
 
-bpMagnitude = sum(filtfilt(b.bp, a.bp, mag(range, :)).^2, 2);
+bpMagnitude = sum(filtfilt(b.hp, a.hp, mag).^2, 2);
 hpMagnitude = sum(filtfilt(b.hp, a.hp, mag(range, :)).^2, 2);
 
 figure(24)
@@ -21,7 +21,8 @@ clf
 
 subplot(1, 2, 1)
 plot(bpMagnitude)
-title('bandpass')
+title('hp total')
+
 
 subplot(1, 2, 2)
 plot(hpMagnitude)

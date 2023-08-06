@@ -1,5 +1,5 @@
-accId = 1;
-trialId = 1;
+accId = 3;
+trialId = 3;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -22,11 +22,16 @@ if ~isempty(find(ismember(chargingAcc, accName))) % Not a charging status
 end
 
 chargingLatency = 200;
-status = false; % detach : false, attach : true
+accessoryStatus = false; % attached : true, detached : false
+detectionStatus = false;
 startPoint = -1; % start points where accessory was initially detected
-refPoint = - 1; % reference point : detection points that has maximum value of magnitude
-detectionPoints = []; 
+refPoint = -1; % reference point : detection points that has maximum value of magnitude
+curPoints = []; 
+prevPoints = [];
+totalDetections = [];
 
+
+tic
 interval = 100;
 start = 100;
 extractInterval = (-wSize:wSize);
@@ -38,46 +43,120 @@ for t = 2:start
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
 end
 
-for t = 1 + start:300
+for t = 1 + start:length(mag.sample)
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
-    range = t + (-interval:-1);
-
-    [flag, points] = func_detection(mag, gyro, acc, range, status);
+    % mag.inferredMag = r
     
-    disp(t)
-
-    if startPoint == -1 && flag
-        startPoint = points(1);
-        
-    elseif flag
-        detectionPoints = unique([detectionPoints,points]);
+    if mod(t, 5) ~= 0
+        continue;
     end
 
+    range = t + (-interval:-1);
+    
+    [flag, points] = func_detection(mag, gyro, acc, range, accessoryStatus, t);
+    
+    % Detect accessory attach or detach
+    if flag
+        % curPoints = unique([curPoints, points]);
+        curPoints = setdiff(unique([curPoints, points]), prevPoints);
+        % disp('In if')
+        % t
+        % curPoints
+        % disp('end')
 
-    if startPoint ~= -1 && startPoint + interval <= t
-        % select points & feature extractions
-        magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval, :)).^2, 2);
-        refPoint = find(magnitude == max(magnitude(detectionPoints)), 1);
+        if ~isempty(curPoints)
+            startPoint = curPoints(1);
+        end
+    end
 
+    % Find a reference point for feature extraction.
+    if startPoint ~= -1 && startPoint + interval <= t && refPoint == -1
+        % select maximum magntiude in points
+        magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
+        tarIdx = curPoints - startPoint + 1;
+        
+        refPoint = startPoint + find(magnitude == max(magnitude(tarIdx)));
+
+        % refPoint
+        % t
+        % curPoints
+        % 
+        startPoint = -1;
+        prevPoints = curPoints;
+        curPoints = [];
+        totalDetections(end + 1) = refPoint;
+    end
+
+    % Feature extraction using charging status
+    if refPoint ~= -1 && refPoint + chargingLatency <= t
         extractRange = refPoint + extractInterval;
         
-        [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 1, rate);
+        [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
+        % detectionStatus = false;
+
         
-        startPoint = -1;
-        detectionPoints = [];
+        if accessoryStatus == false
+            [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+        else
+            [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
+        end
+
+        featureValue
+        refPoint
+        mean(distance)
+        accessoryStatus = ~accessoryStatus;
         
+        refPoint = -1;
+
+        % if mean(distance) < 10
+        %     featureValue
+        % 
+        %     accessorystatus = ~accessorystatus;
+        % 
+        %     refPoint = -1;
+        % end
+    end
+end
+
+if refPoint ~= -1
+    extractRange = refPoint + extractInterval;
+        
+    [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
+    % detectionStatus = false;
+
+    
+    if accessoryStatus == false
+        [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+    else
+        [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
     end
 
-    if refPoint ~= -1 && refPoint + chargingLatency <= t
-        
-    elseif refPoint ~= -1 && chargingStatus(t) == 1
-        
-    end
-
+    featureValue
+    refPoint
+    mean(distance)
+    accessoryStatus = ~accessoryStatus;
+    
+    refPoint = -1;
 end
 
 
-function [result, detectPoints] = func_detection(mag, gyro, acc, range, status)
+toc
+
+% Plot for results
+figure(1)
+clf
+
+nRow = 1;
+nCol = 1;
+
+subplot(nRow, nCol, 1)
+hold on
+plot(mag.sample)
+stem(totalDetections, mag.sample(totalDetections), 'filled')
+
+
+
+function [result, detectPoints] = func_detection(mag, acc, range, status, inferredMag)
 result = false;
 detectPoints = [];
 interval = 100;
@@ -94,7 +173,6 @@ order = 4;
 [b.magh, a.magh] = butter(order, 10/rate * 2, 'high');
 [b.acch, a.acch] = butter(order, 40/rate * 2, 'high');
 
-
 % Filter 1 : Magnitude > 1
 wRange = -100 + range(1):range(end);
 
@@ -102,12 +180,14 @@ if wRange(1) < 1
     wRange = 1:wRange(end);
 end
 
+wRangeSize = 1:length(wRange);
 magnitude.mag = sum(filtfilt(b.magh, a.magh, mag.sample(wRange, :)).^2, 2);
 
-filter1 = magnitude.mag(wRange(end-99:end)) > magThreshold;
+filter1 = magnitude.mag(wRangeSize(end-99:end)) > magThreshold;
 if isempty(find(filter1))
     return
 end
+
 
 % Filter 2 : dAngle > 0.01
 filter2 = filter1 & mag.dAngle(range) > dAngleThreshold;
@@ -118,9 +198,14 @@ end
 % Filter 3 : mag magnitude CFAR 
 filter3 = filter2;
 for cnt3 = find(filter3)'
-    innerRange = cnt3 + (-100:-1);
+    innerRange = 100 + cnt3 + (-100:-1);
     
-    filter3(cnt3) = func_CFAR(magnitude.mag(innerRange), magnitude.mag(cnt3), cfarThreshold);
+    % disp([num2str(cnt3), '_', num2str(innerRange(1)), '_', num2str(innerRange(end))])
+    if innerRange(end) > length(magnitude.mag)
+        filter3(cnt3) = 0;
+    else
+        filter3(cnt3) = func_CFAR(magnitude.mag(innerRange), magnitude.mag(innerRange(end)+1), cfarThreshold);
+    end
 end
 
 if isempty(find(filter3))
@@ -128,7 +213,7 @@ if isempty(find(filter3))
 end
 
 % Filter 4 : Acc magnitude CFAR
-magnitude.acc = sum(filtfilt(b.acch, a.acch, acc.sample(wRange, :)).^2, 2);
+magnitude.acc = sum(filtfilt(b.acch, a.acch, acc.sample((wRange(1)-5):wRange(end), :)).^2, 2);
 
 filter4 = filter3;
 for cnt3 = find(filter4)'
@@ -136,17 +221,10 @@ for cnt3 = find(filter4)'
     outerRange = cnt3 + (-5:0);
 
     for cnt4 = outerRange
-        innerRange = interval + cnt4 + (-100:-1);
+        innerRange = 100 + cnt4 + (-100:-1);
 
-        if innerRange < 1
-            innerRange = 1:innerRange(end);
-        end
-
-        if innerRange > length(range)
-            innerRange = innerRange(1):length(range);
-        end
-
-        if(func_CFAR(acc.magnitude(innerRange), acc.magnitude(cnt4), cfarThreshold))
+        % disp([num2str(cnt3),'_', num2str(cnt4)])
+        if innerRange(1) >= 1 && func_CFAR(magnitude.acc(innerRange), magnitude.acc(innerRange(end) + 1), cfarThreshold)
             filter4(cnt3) = 1;
             break;
         end
@@ -157,6 +235,14 @@ if isempty(find(filter4))
     return
 end
 
+
+filter5 = filter4;
+for cnt = find(filter5)'
+
+end
+
+
+
 result = true;
-detectPoints = find(filter4)';
+detectPoints = find(filter4)' + range(1) - 1;
 end

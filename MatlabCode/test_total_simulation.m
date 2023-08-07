@@ -1,5 +1,5 @@
 accId = 2;
-trialId = 8;
+trialId = 4;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -23,7 +23,6 @@ end
 
 chargingLatency = 200;
 accessoryStatus = false; % attached : true, detached : false
-detectionStatus = false;
 startPoint = -1; % start points where accessory was initially detected
 refPoint = -1; % reference point : detection points that has maximum value of magnitude
 curPoints = []; 
@@ -36,7 +35,7 @@ interval = 100;
 start = 100;
 extractInterval = (-wSize:wSize);
 
-[b.magh, a.magh] = butter(order, 10/rate * 2, 'high');
+[b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 mag.dAngle = zeros(length(mag.sample), 1);
 mag.inferAngle = zeros(length(mag.sample), 1);
 
@@ -50,6 +49,7 @@ for t = 2:start
 end
 
 for t = 1 + start:length(mag.sample)
+% for t = 1 + start:1000
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
     euler = gyro.sample(t, :) * 1/rate;
     rotm = eul2rotm(euler, 'XYZ');
@@ -72,11 +72,13 @@ for t = 1 + start:length(mag.sample)
         % disp('In if')
         % t
         % curPoints
-        % disp('end')
+        
 
         if ~isempty(curPoints)
             startPoint = curPoints(1);
         end
+        
+        % disp('end')
     end
 
     % Find a reference point for feature extraction.
@@ -84,15 +86,11 @@ for t = 1 + start:length(mag.sample)
         % select maximum magntiude in points
         magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
         tarIdx = curPoints - startPoint + 1;
-        
-        startPoint + tarIdx
-    
         refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
-
+        
+        % disp('Find a refPoint')
         % refPoint
-        % t
-        % curPoints
-        % 
+
         startPoint = -1;
         prevPoints = curPoints;
         curPoints = [];
@@ -103,8 +101,6 @@ for t = 1 + start:length(mag.sample)
         extractRange = refPoint + extractInterval;
         
         [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-        % detectionStatus = false;
-
         
         if accessoryStatus == false
             [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
@@ -112,19 +108,39 @@ for t = 1 + start:length(mag.sample)
             [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
         end
 
-        % featureValue
-        % refPoint
-        % mean(distance)
+        if accessoryStatus
+            s = 'attached';
+        else
+            s = 'detached';
+        end
 
-        if (accessoryStatus == false && mean(distance) < 10) || (accessoryStatus == true)
+        disp(['Check for distance!  accessory is ', s])
+        disp(['Mean distance : ', num2str(mean(distance))])
+
+        if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
+            label = predict(model.knn, featureValue);
+            
+            if accessoryStatus == false
+                disp(['attach : ', char(label)])
+            else
+                disp('detach')
+                
+            end      
+
             accessoryStatus = ~accessoryStatus;
+
+            disp(['refPoint : ', num2str(refPoint)])
+            
             totalDetections(end + 1) = refPoint;
         end
+        disp('end!')
         
         refPoint = -1;
     end
 end
 
+
+% Rest 
 if refPoint ~= -1
     extractRange = refPoint + extractInterval;
         
@@ -160,109 +176,3 @@ subplot(nRow, nCol, 1)
 hold on
 plot(mag.sample)
 stem(totalDetections, mag.sample(totalDetections), 'filled')
-
-
-
-function [result, detectPoints] = func_detection(mag, acc, range, status, t)
-result = false;
-detectPoints = [];
-interval = 100;
-
-% Detection thresholds
-magThreshold = 1;
-cfarThreshold = .9999;
-corrThreshold = .9;
-dAngleThreshold = .01;
-
-% High-pass filter args
-rate = 100;
-order = 4;
-[b.magh, a.magh] = butter(order, 10/rate * 2, 'high');
-[b.acch, a.acch] = butter(order, 40/rate * 2, 'high');
-
-% Filter 1 : Magnitude > 1
-wRange = -100 + range(1):range(end);
-
-if wRange(1) < 1
-    wRange = 1:wRange(end);
-end
-
-wRangeSize = 1:length(wRange);
-magnitude.mag = sum(filtfilt(b.magh, a.magh, mag.sample(wRange, :)).^2, 2);
-
-filter1 = magnitude.mag(wRangeSize(end-99:end)) > magThreshold;
-if isempty(find(filter1))
-    return
-end
-
-
-% Filter 2 : dAngle > 0.01
-filter2 = filter1 & mag.dAngle(range) > dAngleThreshold;
-if isempty(find(filter2))
-    return
-end
-
-% Filter 3 : mag magnitude CFAR 
-filter3 = filter2;
-for cnt3 = find(filter3)'
-    innerRange = 100 + cnt3 + (-100:-1);
-    
-    % disp([num2str(cnt3), '_', num2str(innerRange(1)), '_', num2str(innerRange(end))])
-    if innerRange(end) > length(magnitude.mag)
-        filter3(cnt3) = 0;
-    else
-        filter3(cnt3) = func_CFAR(magnitude.mag(innerRange), magnitude.mag(innerRange(end)+1), cfarThreshold);
-    end
-end
-
-if isempty(find(filter3))
-    return
-end
-
-% Filter 4 : Acc magnitude CFAR
-magnitude.acc = sum(filtfilt(b.acch, a.acch, acc.sample((wRange(1)-5):wRange(end), :)).^2, 2);
-
-filter4 = filter3;
-for cnt3 = find(filter4)'
-    filter4(cnt3) = 0;
-    outerRange = cnt3 + (-5:0);
-
-    for cnt4 = outerRange
-        innerRange = 100 + cnt4 + (-100:-1);
-
-        % disp([num2str(cnt3),'_', num2str(cnt4)])
-        if innerRange(1) >= 1 && func_CFAR(magnitude.acc(innerRange), magnitude.acc(innerRange(end) + 1), cfarThreshold)
-            filter4(cnt3) = 1;
-            break;
-        end
-    end
-end
-
-if isempty(find(filter4))
-    return
-end
-
-
-filter5 = filter4;
-for cnt = find(filter5)'
-    innerRange = range(1) - 1 + cnt + (-5:5);
-
-    if innerRange(1) < 1
-        innerRange = 1:innerRange(end);
-    end
-
-    if innerRange(end) > t-1
-        innerRange = innerRange(1):t-1;
-    end
-
-    c = corr(mag.dAngle(innerRange), mag.inferAngle(innerRange));
-    filter5(cnt) = c > corrThreshold;
-end
-
-if isempty(find(filter5))
-    return
-end
-
-result = true;
-detectPoints = find(filter5)' + range(1) - 1;
-end

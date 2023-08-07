@@ -51,18 +51,55 @@ for cnt = 1:length(results)
     end
 
     if total == 0
+        statistics(cnt) = [];
         continue;
     end
 
     statistics(cnt).total = total;
-    statistics(cnt).result = cur;
+    statistics(cnt).detectionResult = cur;
     statistics(cnt).attach = sum([cur.trial.attachCount], 2);
     statistics(cnt).detach = sum([cur.trial.detachCount], 2);
     statistics(cnt).fp = sum([cur.trial.falsePositive], 2);
+end
+%%
+for cnt = 1:length(statistics)
+    cur = struct();
+    accName = data(cnt).name;
+    nTrials = length(results(cnt).trial);
+    total = 0;
 
+    for cnt2 = 1:nTrials
+        if results(cnt).trial(cnt2).detection == 0
+            continue
+        end
+        total = 1;
+
+        result = results(cnt).trial(cnt2).result;
+        totalAttach = length(data(cnt).trial(cnt2).detect.sample)/2;
+        count = 0;
+        
+        for cnt3 = 1:length(result)
+            trueLabel = result(cnt3).label;
+            predictLabel = result(cnt3).pLabel;
+
+            if strcmp(predictLabel, 'detached')
+                continue;
+            end
+            
+            if strcmp(trueLabel, predictLabel)
+                count = count + 1;
+            end
+        end
+        
+        cur.trial(cnt2).correct = count;
+        cur.trial(cnt2).totalAttach = totalAttach;
+    end
+
+    statistics(cnt).classificationResult = cur;
+    statistics(cnt).classificationAccuracy = sum([cur.trial.correct], 2)/sum([cur.trial.totalAttach], 2) * 100;
 end
 
-%% Show
+%% Show Detection accuracy
 truePositive = zeros(2, length(statistics)+1);
 falsePositive = zeros(1, length(statistics)+1);
 accNames = {statistics.name};
@@ -84,9 +121,9 @@ for cnt = 1:length(statistics)
     falsePositive(cnt) = detect.fp;
 end
 
-truePositive(1, end) = mean(truePositive(1, 1:length(data)));
-truePositive(2, end) = mean(truePositive(2, 1:length(data)));
-falsePositive(1, end) = sum(falsePositive(1, 1:length(data)));
+truePositive(1, end) = mean(truePositive(1, 1:length(statistics)));
+truePositive(2, end) = mean(truePositive(2, 1:length(statistics)));
+falsePositive(1, end) = sum(falsePositive(1, 1:length(statistics)));
 accNames = [accNames, 'mean'];
 
 f = figure('Name', [folderName, '_accuracy']);
@@ -117,3 +154,26 @@ ylim([0, 40])
 grid on;
 xticklabels(accNames);
 title('False postive')
+
+%% Show classification accuracy
+accuracys = cell2mat({statistics.classificationAccuracy});
+accNames = {statistics.name};
+
+f = figure('Name', [folderName, '_classification_accuracy']);
+clf
+
+nRows = 1;
+nCols = 1;
+
+
+f.Position(2:4) = [250, 720, 360]; 
+
+accuracys(end + 1) = mean(accuracys);
+accNames{end + 1} = 'mean';
+
+subplot(nRows, nCols, 1);
+bar(accuracys)
+ylim([0, 100])
+grid on;
+xticklabels(accNames);
+title('classification accuracy')

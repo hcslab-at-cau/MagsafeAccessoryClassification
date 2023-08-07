@@ -2,8 +2,8 @@
 
 interval = 100;
 start = 100;
-extractInterval = (-wSize:wSize);
 wSize = 100;
+extractInterval = (-wSize:wSize);
 chargingLatency = 200;
 startPoint = -1; % start points where accessory was initially detected
 
@@ -96,12 +96,11 @@ for cnt = 1:length(data)
                 if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
                     label = predict(model.knn, featureValue);
                     
-                    
                     accessoryStatus = ~accessoryStatus;
                     cur(cnt3).detect = refPoint;
                     cur(cnt3).feature = featureValue;
                     if accessoryStatus == true
-                        cur(cnt3).pLabel = label;
+                        cur(cnt3).pLabel = char(label);
                     else
                         cur(cnt3).pLabel = 'detach';
                     end
@@ -134,7 +133,7 @@ for cnt = 1:length(data)
                 cur(cnt3).feature = featureValue;
                 
                 if accessoryStatus == true
-                    cur(cnt3).pLabel = label;
+                    cur(cnt3).pLabel = char(label);
                 else
                     cur(cnt3).pLabel = 'detach';
                 end
@@ -149,5 +148,5 @@ for cnt = 1:length(data)
 end
 toc
 
-
+run('step5_total_evaluation.m')
 

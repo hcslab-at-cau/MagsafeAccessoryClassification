@@ -1,5 +1,5 @@
-accId = 2;
-trialId = 4;
+accId = 10;
+trialId = 2;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -12,9 +12,9 @@ gyro = tmp.gyro;
 acc = tmp.acc;
 
 % For charging status
-chargingAcc = {charging.name};
 chargingStatus = zeros(1, length(mag.sample));
-if ~isempty(find(ismember(chargingAcc, accName))) % Not a charging status
+if exist('charging', 'var') % Not a charging status
+    chargingAcc = {charging.name};
     idx = find(ismember(chargingAcc, accName));
     chargingTime = charging(idx).trial(trialId).charging.sample;
     
@@ -28,7 +28,6 @@ refPoint = -1; % reference point : detection points that has maximum value of ma
 curPoints = []; 
 prevPoints = [];
 totalDetections = [];
-
 
 tic
 interval = 100;
@@ -49,7 +48,6 @@ for t = 2:start
 end
 
 for t = 1 + start:length(mag.sample)
-% for t = 1 + start:1000
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
     euler = gyro.sample(t, :) * 1/rate;
     rotm = eul2rotm(euler, 'XYZ');
@@ -67,29 +65,22 @@ for t = 1 + start:length(mag.sample)
     
     % Detect accessory attach or detach
     if flag
-        % curPoints = unique([curPoints, points]);
         curPoints = setdiff(unique([curPoints, points]), prevPoints);
-        % disp('In if')
-        % t
-        % curPoints
         
-
         if ~isempty(curPoints)
             startPoint = curPoints(1);
         end
-        
-        % disp('end')
+
     end
 
     % Find a reference point for feature extraction.
     if startPoint ~= -1 && startPoint + interval <= t && refPoint == -1
         % select maximum magntiude in points
-        magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
+        magnitude = sum(filtfilt(b.mag, a.mag, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
         tarIdx = curPoints - startPoint + 1;
         refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
         
-        % disp('Find a refPoint')
-        % refPoint
+        refPoint
 
         startPoint = -1;
         prevPoints = curPoints;
@@ -116,6 +107,10 @@ for t = 1 + start:length(mag.sample)
 
         disp(['Check for distance!  accessory is ', s])
         disp(['Mean distance : ', num2str(mean(distance))])
+        disp(['feature : ' ...
+            num2str(featureValue(1)), ', ', num2str(featureValue(2)), ', ', ...
+            num2str(featureValue(3))])
+        disp(['refPoint : ', num2str(refPoint)])
 
         if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
             label = predict(model.knn, featureValue);
@@ -127,10 +122,7 @@ for t = 1 + start:length(mag.sample)
                 
             end      
 
-            accessoryStatus = ~accessoryStatus;
-
-            disp(['refPoint : ', num2str(refPoint)])
-            
+            accessoryStatus = ~accessoryStatus;        
             totalDetections(end + 1) = refPoint;
         end
         disp('end!')

@@ -1,4 +1,4 @@
-run('step0_load_data.m')
+% run('step0_load_data.m')
 
 interval = 100;
 start = 100;
@@ -71,7 +71,7 @@ for cnt = 1:length(data)
             % Find a reference point for feature extraction.
             if startPoint ~= -1 && startPoint + interval <= t && refPoint == -1
                 % select maximum magntiude in points
-                magnitude = sum(filtfilt(b.magh, a.magh, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
+                magnitude = sum(filtfilt(b.mag, a.mag, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
                 tarIdx = curPoints - startPoint + 1;
                 refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
 

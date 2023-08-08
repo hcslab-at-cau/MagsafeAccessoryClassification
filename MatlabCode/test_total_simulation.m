@@ -1,5 +1,5 @@
-accId = 10;
-trialId = 2;
+accId = 2;
+trialId = 4;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -120,7 +120,7 @@ for t = 1 + start:length(mag.sample)
             else
                 disp('detach')
                 
-            end      
+            end  
 
             accessoryStatus = ~accessoryStatus;        
             totalDetections(end + 1) = refPoint;

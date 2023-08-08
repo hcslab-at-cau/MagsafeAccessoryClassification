@@ -1,5 +1,7 @@
-% run('step0_load_data.m')
+run('step0_load_data.m')
+run('step4_classification.m')
 
+distanceThreshold = 20;
 interval = 100;
 start = 100;
 wSize = 100;
@@ -15,6 +17,7 @@ tic
 for cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
     accName = data(cnt).name;
+    results(cnt).name = accName;
 
     for cnt2 = 1:nTrials
         tmp = data(cnt).trial(cnt2);
@@ -93,7 +96,7 @@ for cnt = 1:length(data)
                 end
                
         
-                if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
+                if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
                     label = predict(model.knn, featureValue);
                     
                     accessoryStatus = ~accessoryStatus;
@@ -127,7 +130,7 @@ for cnt = 1:length(data)
                 [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
             end
         
-            if (accessoryStatus == false && mean(distance) < 10) || (accessoryStatus == true)
+            if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
                 accessoryStatus = ~accessoryStatus;
                 cur(cnt3).detect = refPoint;
                 cur(cnt3).feature = featureValue;

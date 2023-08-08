@@ -13,7 +13,8 @@ for cnt = 1:length(data)
         motionTime = cur.time.sample;
         rmagTime= cur.timeRaw.sample;
         q = (rmagTime(1) - motionTime(1))/10;
-        initIndex = fix(q) + mod(q, 5) + 1;
+        initIndex = fix(q) + mod(fix(q), 5) + 1;
+
         
         % Arrange first timestamp to start at almostly equal time(with in 5ms).
         if initIndex > 0

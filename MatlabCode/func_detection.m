@@ -15,6 +15,7 @@ order = 4;
 [b.magh, a.magh] = butter(order, 10/rate * 2, 'high');
 [b.acch, a.acch] = butter(order, 40/rate * 2, 'high');
 
+
 % Filter 1 : Magnitude > 1
 wRange = -100 + range(1):range(end);
 
@@ -53,30 +54,45 @@ for cnt3 = find(filter3)'
     end
 end
 
+
 if isempty(find(filter3))
     return
 end
 
-% Filter 4 : Acc magnitude CFAR
 
+% Filter 4 : Acc magnitude CFAR
 if ~status 
     sp = wRange(1)-5;
     if sp < 1
         sp = 1;
     end
+
+    accRange = sp:wRange(end);
+    magnitude.acc = sum(filtfilt(b.acch, a.acch, acc.sample(accRange, :)).^2, 2);
     
-    magnitude.acc = sum(filtfilt(b.acch, a.acch, acc.sample(sp:wRange(end), :)).^2, 2);
-    
+    % if t > 1000 && t < 1500
+    %     sp
+    %     wRange(end)
+    % end
+
     filter4 = filter3;
     for cnt3 = find(filter4)'
         filter4(cnt3) = 0;
         outerRange = cnt3 + (-5:0);
+        k = length(accRange)-100;
     
         for cnt4 = outerRange
-            innerRange = 100 + cnt4 + (-100:-1);
-    
+            point = k+cnt4;
+            innerRange = point + (-100:-1);
+
+           
             % disp([num2str(cnt3),'_', num2str(cnt4)])
-            if innerRange(1) >= 1 && func_CFAR(magnitude.acc(innerRange), magnitude.acc(innerRange(end) + 1), cfarThreshold)
+            % disp(num2str(length(magnitude.acc)))
+            % disp(point)
+            % disp(cnt3)
+            % disp(cnt4)
+
+            if innerRange(1) >= 1 && func_CFAR(magnitude.acc(innerRange), magnitude.acc(point), cfarThreshold)
                 filter4(cnt3) = 1;
                 break;
             end
@@ -87,6 +103,7 @@ if ~status
         return
     end
 end
+
 
 % Filter 5 : Correlation
 if status
@@ -110,9 +127,13 @@ for cnt = find(filter5)'
     filter5(cnt) = c > corrThreshold;
 end
 
+
 if isempty(find(filter5))
     return
 end
+
+
+
 
 result = true;
 detectPoints = find(filter5)' + range(1) - 1;

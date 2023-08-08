@@ -1,5 +1,5 @@
-accId = 2;
-trialId = 4;
+accId = 9;
+trialId = 10;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -13,12 +13,14 @@ acc = tmp.acc;
 
 % For charging status
 chargingStatus = zeros(1, length(mag.sample));
-if exist('charging', 'var') % Not a charging status
+if exist('charging', 'var')% Not a charging status
     chargingAcc = {charging.name};
-    idx = find(ismember(chargingAcc, accName));
-    chargingTime = charging(idx).trial(trialId).charging.sample;
-    
-    chargingStatus(chargingTime) = 1;
+    idx = find(ismember(chargingAcc, accName), 1);
+    if ~isempty(idx)
+        chargingTime = charging(idx).trial(trialId).charging.sample;
+        
+        chargingStatus(chargingTime) = 1;
+    end
 end
 
 chargingLatency = 200;
@@ -80,7 +82,7 @@ for t = 1 + start:length(mag.sample)
         tarIdx = curPoints - startPoint + 1;
         refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
         
-        refPoint
+        % refPoint
 
         startPoint = -1;
         prevPoints = curPoints;
@@ -146,7 +148,7 @@ if refPoint ~= -1
         [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
     end
 
-    if (accessoryStatus == false && mean(distance) < 10) || (accessoryStatus == true)
+    if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
         accessoryStatus = ~accessoryStatus;
         totalDetections(end + 1) = refPoint;
     end

@@ -74,8 +74,14 @@ for cnt = 1:length(statistics)
         end
         total = 1;
 
+        if newApp
+            detect = data(cnt).trial(cnt2).detect.sample;
+        else
+            detect = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
+        end
+
         result = results(cnt).trial(cnt2).result;
-        totalAttach = length(data(cnt).trial(cnt2).detect.sample)/2;
+        totalAttach = length(detect)/2;
         count = 0;
         
         for cnt3 = 1:length(result)
@@ -177,3 +183,40 @@ ylim([0, 100])
 grid on;
 xticklabels(accNames);
 title('classification accuracy')
+
+%% Show confusion matrix
+
+labels.predict = [];
+labels.label = [];
+totalAcc = unique(featureMatrix.train.label);
+
+
+for cnt = 1:length(results)
+    accName = results(cnt).name;
+    nTrials = length(results(cnt).trial);
+    
+    
+    if isempty(find(ismember(totalAcc, accName), 1))
+        continue;
+    end
+
+    for cnt2 = 1:nTrials
+        result = results(cnt).trial(cnt2).result;
+        
+        preds = {result.pLabel};
+        predLabel = preds(~ismember(preds, 'detach'));
+  
+        
+        labels.predict = [labels.predict, predLabel];
+        labels.label = [labels.label, repmat({accName}, 1, length(predLabel))];
+    end
+end
+
+fig = figure('Name', 'confusion matrix', 'NumberTitle','off');
+fig.Position(1:4) = [200, 0, 800, 800]; 
+
+c = confusionmat(labels.label, labels.predict, "Order", totalAcc);
+cm = confusionchart(c, totalAcc);
+
+cm.RowSummary = 'row-normalized';
+title('confusion matrix');

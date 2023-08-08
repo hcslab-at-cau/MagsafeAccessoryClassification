@@ -1,5 +1,5 @@
 accId = 1;
-trialId = 2;
+trialId = 1;
 
 tmp = data(accId).trial(trialId);
 mag = tmp.mag;
@@ -39,18 +39,32 @@ end
 
 figure(123)
 clf
-
-ranges = click + 100:length(mag.diff);
-interval = fix(length(ranges)/2);
-range1 = 1:cnts;
-range2 = cnts:length(ranges);
-
-p = features(range1, :);
-scatter3(p(:,1), p(:,2), p(:,3), 'filled');
 hold on
 
-p = features(range2, :);
-scatter3(p(:,1), p(:,2), p(:,3));
+ranges = click + 100:length(mag.diff);
+cnt = 4;
+interval = fix(length(ranges)/cnt);
+
+labels = 1:cnt;
+
+for cnt2 = 1:cnt
+    randomColor = rand(1, 3);
+    range = 1 + interval*(cnt2-1):interval*cnt2;
+    p = features(range, :);
+    scatter3(p(:,1), p(:,2), p(:,3), 'filled', 'MarkerFaceColor', randomColor, 'MarkerEdgeColor', randomColor);
+end
+
+legend({'1', '2', '3', '4'})
+xlabel('x')
+ylabel('y')
+zlabel('z')
+
+% p = features(range1, :);
+% scatter3(p(:,1), p(:,2), p(:,3), 'filled');
+% hold on
+% 
+% p = features(range2, :);
+% scatter3(p(:,1), p(:,2), p(:,3));
 
 figure(124)
 clf

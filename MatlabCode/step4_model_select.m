@@ -1,3 +1,5 @@
+testDir = {'jaemin3_p2p', 'jaemin4_p2p', 'jaemin5_p2p', 'jaemin6_p2p', 'jaemin7_p2p', 'jaemin8_p2p', 'jaemin9_p2p'
+    'insu1_p2p', 'junhyub1_p2p', 'Suhyeon1_p2p'};
 
 featureName = 'jaemin9_p2p';
 
@@ -13,7 +15,6 @@ test = func_load_feature(prefix.test);
 options = struct("Optimizer","asha","UseParallel",true);
 mdl = fitcauto(featureMatrix.train.data, featureMatrix.train.label, "HyperparameterOptimizationOptions",options);
 
-%%
 
 [preds, scores] = predict(mdl,featureMatrix.test.data);
 probs = exp(scores) ./ sum(exp(scores),2);
@@ -31,3 +32,5 @@ clf
 c = confusionmat(featureMatrix.test.label, YPred, "Order", totalAcc);
 cm = confusionchart(c, totalAcc);
 cm.RowSummary = 'row-normalized';
+
+%% Split charging, non-charging model

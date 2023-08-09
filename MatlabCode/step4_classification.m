@@ -1,4 +1,4 @@
-clear;
+% clear;
 % Load data
 if exist('featureName', 'var')
     disp('exist featureName')
@@ -45,9 +45,12 @@ models = fieldnames(template);
 % Train & predict
 for cnt2 = 1:length(models)
     modelName = char(models(cnt2));
-
+  
     model.(modelName) = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.(modelName));
-    [pred.(modelName), prob.(modelName)] = func_predict(model.(modelName), featureMatrix.test, chargingAcc, true);
+    [pred.(modelName), scores] = predict(model.(modelName), featureMatrix.test.data);
+    prob.(modelName) = exp(scores) ./ sum(exp(scores),2);
+
+    pred.(modelName) = func_predict(featureMatrix.test.label, pred.(modelName), prob.(modelName), chargingAcc);
 end
 
 fig = figure('Name', ['train : ', prefix.train, '  test : ', prefix.test], 'NumberTitle','off');

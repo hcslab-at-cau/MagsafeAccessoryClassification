@@ -84,19 +84,19 @@ for cnt = 1:length(data)
             end
         
             % Feature extraction using charging status
-            if refPoint ~= -1 && refPoint + chargingLatency <= t
+            if refPoint ~= -1 && (refPoint + chargingLatency <= t || t == length(mag.sample))
                 extractRange = refPoint + extractInterval;
                 
-                [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-                
                 if accessoryStatus == false
+                    [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
                     [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 else
-                    [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
+                    [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
+                    [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 end
                
         
-                if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
+                if mean(distance) < distanceThreshold
                     label = predict(model.knn, featureValue);
                     
                     accessoryStatus = ~accessoryStatus;
@@ -130,12 +130,13 @@ for cnt = 1:length(data)
                 [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
             end
         
-            if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
+            if mean(distance) < distanceThreshold
                 accessoryStatus = ~accessoryStatus;
                 cur(cnt3).detect = refPoint;
                 cur(cnt3).feature = featureValue;
                 
                 if accessoryStatus == true
+
                     cur(cnt3).pLabel = char(label);
                 else
                     cur(cnt3).pLabel = 'detach';

@@ -1,9 +1,10 @@
-accId = 9;
-trialId = 10;
+accId = 11;
+trialId = 2;
 wSize = 100;
 rate = 100;
 order = 4;
 
+distanceThreshold = 20;
 tmp = data(accId).trial(trialId);
 accName = data(accId).name;
 
@@ -13,6 +14,9 @@ acc = tmp.acc;
 
 % For charging status
 chargingStatus = zeros(1, length(mag.sample));
+chargingAcc = {'batterypack1', 'charger1', 'charger1', 'holder2',...
+    'holder3', 'holder4'};
+
 if exist('charging', 'var')% Not a charging status
     chargingAcc = {charging.name};
     idx = find(ismember(chargingAcc, accName), 1);
@@ -29,7 +33,10 @@ startPoint = -1; % start points where accessory was initially detected
 refPoint = -1; % reference point : detection points that has maximum value of magnitude
 curPoints = []; 
 prevPoints = [];
-totalDetections = [];
+
+totalRefPoints = [];
+totalStartPoints = [];
+totalEndPoints = [];
 
 tic
 interval = 100;
@@ -72,7 +79,6 @@ for t = 1 + start:length(mag.sample)
         if ~isempty(curPoints)
             startPoint = curPoints(1);
         end
-
     end
 
     % Find a reference point for feature extraction.
@@ -81,7 +87,8 @@ for t = 1 + start:length(mag.sample)
         magnitude = sum(filtfilt(b.mag, a.mag, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
         tarIdx = curPoints - startPoint + 1;
         refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
-        
+        totalStartPoints(end + 1) = startPoint;
+        totalEndPoints(end + 1) = t; 
         % refPoint
 
         startPoint = -1;
@@ -90,15 +97,15 @@ for t = 1 + start:length(mag.sample)
     end
 
     % Feature extraction using charging status
-    if refPoint ~= -1 && refPoint + chargingLatency <= t
+    if refPoint ~= -1 && (refPoint + chargingLatency <= t || t == length(mag.sample))
         extractRange = refPoint + extractInterval;
-        
-        [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-        
+          
         if accessoryStatus == false
+            [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
             [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
         else
-            [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
+            [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
+            [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
         end
 
         if accessoryStatus
@@ -114,46 +121,23 @@ for t = 1 + start:length(mag.sample)
             num2str(featureValue(3))])
         disp(['refPoint : ', num2str(refPoint)])
 
-        if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
+        % if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
+        if mean(distance) < distanceThreshold
             label = predict(model.knn, featureValue);
             
             if accessoryStatus == false
                 disp(['attach : ', char(label)])
             else
-                disp('detach')
-                
+                disp(['detach : ', char(label)])
             end  
 
             accessoryStatus = ~accessoryStatus;        
-            totalDetections(end + 1) = refPoint;
+            totalRefPoints(end + 1) = refPoint;
         end
         disp('end!')
         
         refPoint = -1;
     end
-end
-
-
-% Rest 
-if refPoint ~= -1
-    extractRange = refPoint + extractInterval;
-        
-    [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-    % detectionStatus = false;
-
-    
-    if accessoryStatus == false
-        [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
-    else
-        [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
-    end
-
-    if (accessoryStatus == false && mean(distance) < 20) || (accessoryStatus == true)
-        accessoryStatus = ~accessoryStatus;
-        totalDetections(end + 1) = refPoint;
-    end
-    
-    refPoint = -1;
 end
 
 
@@ -168,5 +152,13 @@ nCol = 1;
 
 subplot(nRow, nCol, 1)
 hold on
-plot(mag.sample)
-stem(totalDetections, mag.sample(totalDetections), 'filled')
+% plot(mag.sample)
+% stem(totalRefPoints, mag.sample(totalRefPoints, 2), 'filled')
+% stem(totalStartPoints, mag.sample(totalStartPoints, 2), 'filled')
+% stem(totalEndPoints, mag.sample(totalEndPoints, 2), 'filled')
+
+plot(mag.diffSum)
+stem(totalRefPoints, mag.diffSum(totalRefPoints), 'filled')
+stem(totalStartPoints, mag.diffSum(totalStartPoints), 'filled')
+stem(totalEndPoints, mag.diffSum(totalEndPoints), 'filled')
+legend({'diffSum', 'ref', 'start', 'end'})

@@ -49,8 +49,9 @@ for cnt2 = 1:length(models)
     model.(modelName) = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.(modelName));
     [pred.(modelName), scores] = predict(model.(modelName), featureMatrix.test.data);
     prob.(modelName) = exp(scores) ./ sum(exp(scores),2);
+    totalAcc = unique(featureMatrix.test.label);
 
-    pred.(modelName) = func_predict(featureMatrix.test.label, pred.(modelName), prob.(modelName), chargingAcc);
+    pred.(modelName) = func_predict(featureMatrix.test.label, pred.(modelName), prob.(modelName), totalAcc, chargingAcc);
 end
 
 fig = figure('Name', ['train : ', prefix.train, '  test : ', prefix.test], 'NumberTitle','off');

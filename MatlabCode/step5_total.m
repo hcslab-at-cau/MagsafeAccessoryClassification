@@ -1,5 +1,6 @@
-run('step0_load_data.m')
+% run('step0_load_data.m')
 run('step4_classification.m')
+
 
 distanceThreshold = 20;
 interval = 100;
@@ -8,10 +9,16 @@ wSize = 100;
 extractInterval = (-wSize:wSize);
 chargingLatency = 200;
 startPoint = -1; % start points where accessory was initially detected
+chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
+
+% High pass filter 
 rate = 100;
 order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
+totalAcc = {data.name};
+totalAcc{end + 1} = 'undefined';
+
 results = struct();
 tic
 for cnt = 1:length(data)
@@ -27,13 +34,12 @@ for cnt = 1:length(data)
         acc = tmp.acc;
         gyro = tmp.gyro;
 
-        accessoryStatus = false; 
+        accessoryStatus = false; % Detach : false, Attach : true
         refPoint = -1; % reference point : detection points that has maximum value of magnitude
         curPoints = []; 
         prevPoints = [];
         cnt3 = 1; % count for detection
         
-
         mag.dAngle = zeros(length(mag.sample), 1);
         mag.inferAngle = zeros(length(mag.sample), 1); 
 
@@ -97,7 +103,10 @@ for cnt = 1:length(data)
                
         
                 if mean(distance) < distanceThreshold
-                    label = predict(model.knn, featureValue);
+                    [preds, scores] = predict(model.knn, featureValue);
+                    probs = exp(scores) ./ sum(exp(scores),2);
+
+                    label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
                     
                     accessoryStatus = ~accessoryStatus;
                     cur(cnt3).detect = refPoint;
@@ -115,37 +124,6 @@ for cnt = 1:length(data)
             end
         end
         
-        
-        % Rest 
-        if refPoint ~= -1
-            extractRange = refPoint + extractInterval;
-                
-            [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-            % detectionStatus = false;
-        
-            
-            if accessoryStatus == false
-                [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
-            else
-                [~, distance] = knnsearch(featureMatrix.train.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
-            end
-        
-            if mean(distance) < distanceThreshold
-                accessoryStatus = ~accessoryStatus;
-                cur(cnt3).detect = refPoint;
-                cur(cnt3).feature = featureValue;
-                
-                if accessoryStatus == true
-
-                    cur(cnt3).pLabel = char(label);
-                else
-                    cur(cnt3).pLabel = 'detach';
-                end
-                cur(cnt3).label = accName;
-            end
-            
-            refPoint = -1;
-        end
         results(cnt).trial(cnt2).result = cur;
         results(cnt).trial(cnt2).detection = sum(cnt3-1);
     end
@@ -153,4 +131,3 @@ end
 toc
 
 run('step5_total_evaluation.m')
-

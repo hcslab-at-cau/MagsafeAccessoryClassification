@@ -1,5 +1,5 @@
-accId = 11;
-trialId = 2;
+accId = 5;
+trialId = 7;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -13,6 +13,7 @@ gyro = tmp.gyro;
 acc = tmp.acc;
 
 % For charging status
+totalACc = {data.name};
 chargingStatus = zeros(1, length(mag.sample));
 chargingAcc = {'batterypack1', 'charger1', 'charger1', 'holder2',...
     'holder3', 'holder4'};
@@ -123,7 +124,13 @@ for t = 1 + start:length(mag.sample)
 
         % if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
         if mean(distance) < distanceThreshold
-            label = predict(model.knn, featureValue);
+            % label = predict(model.knn, featureValue);
+            
+            [preds, scores] = predict(model.knn, featureValue);
+            probs = exp(scores) ./ sum(exp(scores),2);
+
+            label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
+
             
             if accessoryStatus == false
                 disp(['attach : ', char(label)])

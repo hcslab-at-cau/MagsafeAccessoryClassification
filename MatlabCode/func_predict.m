@@ -1,10 +1,12 @@
-function result = func_predict(label, pred, prob, chargingAcc)
-totalAcc = unique(label);
+function result = func_predict(label, pred, prob, totalAcc, chargingAcc)
+% Assume we know actual label, for identify charging accessorys.
+
 result = pred;
 
-for cnt = 1:length(prob)
+
+for cnt = 1:size(prob, 1)
     p = prob(cnt, :);
-    
+
     % Accessory related to charging & Prediction result is related to charging
     if ~isempty(find(ismember(chargingAcc, label(cnt)), 1)) && isempty(find(ismember(chargingAcc, result(cnt)), 1)) 
         % disp(cnt)
@@ -15,27 +17,27 @@ for cnt = 1:length(prob)
                 continue;
             end
 
+            if length(idx) > 1
+                chargingIdx = length(find(ismember(chargingAcc, totalAcc(idx))));
+
+                if chargingIdx > 1 || chargingIdx == 0
+                    result(cnt) = {'undefined'};
+                else
+                    result(cnt) = chargingAcc(chargingIdx);
+                end
+                break;
+            end
+
             pLabel = totalAcc(idx);
 
-            if ~isempty(find(ismember(chargingAcc, pLabel), 1))
-                % disp(['result has been changed 1  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
-                % disp([num2str(cnt), '_ ', num2str(pLabel)])
-                tmp = pLabel;   
-                if length(pLabel) ~= 1
-                    for cnt2 = 1:length(pLabel)
-                        if ~isempty(find(ismember(chargingAcc, pLabel(cnt2)), 1))
-                            tmp = pLabel(cnt2);
-                            break;
-                        end
-                    end
-                end
-                
-                result(cnt) = tmp;
+            if ~isempty(find(ismember(chargingAcc, pLabel), 1))              
+                result(cnt) = pLabel;
                 break;
             end
         end
     % Accessory is not related to charging & Prediction result is related to charging
     elseif isempty(find(ismember(chargingAcc, label(cnt)), 1)) && ~isempty(find(ismember(chargingAcc, result(cnt)), 1)) 
+        
         for k = 2:length(p)
             idx = find(p == min(maxk(p, k)));
             
@@ -43,27 +45,21 @@ for cnt = 1:length(prob)
                 continue;
             end
 
+            if length(idx) > 1
+                chargingIdx = length(find(ismember(chargingAcc, totalAcc(idx))));
+
+                if chargingIdx > 1 || chargingIdx == 0
+                    result(cnt) = {'undefined'};
+                else
+                    result(cnt) = chargingAcc(chargingIdx);
+                end
+                break;
+            end
+
             pLabel = totalAcc(idx);
 
             if isempty(find(ismember(chargingAcc, pLabel), 1))
-                % disp(['result has been changed 2  ', num2str(result(cnt)), ' to ', num2str(pLabel)])
-                % disp([num2str(cnt), '_ ', num2str(pLabel)])
-
-                tmp = pLabel;   
-                if length(pLabel) ~= 1
-                    for cnt2 = 1:length(pLabel)
-                        if ~isempty(find(ismember(chargingAcc, pLabel(cnt2)), 1))
-                            tmp = pLabel(cnt2);
-                            break;
-                        end
-                    end
-                    if length(pLabel) ~= 1
-                        continue
-                    end
-                end
-                
-                result(cnt) = tmp;
-                % result(cnt) = pLabel;
+                result(cnt) = pLabel;
                 break;
             end
         end

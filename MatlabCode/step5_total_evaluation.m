@@ -217,6 +217,6 @@ fig.Position(1:4) = [200, 0, 800, 800];
 
 c = confusionmat(labels.label, labels.predict, "Order", totalAcc);
 cm = confusionchart(c, totalAcc);
-
+sortClasses(cm, totalAcc)
 cm.RowSummary = 'row-normalized';
 title('confusion matrix');

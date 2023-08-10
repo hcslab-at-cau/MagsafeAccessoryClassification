@@ -1,5 +1,5 @@
-accId = 5;
-trialId = 7;
+accId = 11;
+trialId = 2;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -11,6 +11,11 @@ accName = data(accId).name;
 mag = tmp.mag;
 gyro = tmp.gyro;
 acc = tmp.acc;
+
+mdlPath = 'C:\Users\Jaemin\git\MagsafeAccessoryClassification\MatlabCode\models\';
+
+mdl = load([mdlPath, 'jaemin8_p2p', '.mat']);
+mdl = mdl.mdl;
 
 % For charging status
 totalACc = {data.name};
@@ -126,7 +131,7 @@ for t = 1 + start:length(mag.sample)
         if mean(distance) < distanceThreshold
             % label = predict(model.knn, featureValue);
             
-            [preds, scores] = predict(model.knn, featureValue);
+            [preds, scores] = predict(mdl, featureValue);
             probs = exp(scores) ./ sum(exp(scores),2);
 
             label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
@@ -136,6 +141,7 @@ for t = 1 + start:length(mag.sample)
                 disp(['attach : ', char(label)])
             else
                 disp(['detach : ', char(label)])
+                
             end  
 
             accessoryStatus = ~accessoryStatus;        
@@ -159,13 +165,14 @@ nCol = 1;
 
 subplot(nRow, nCol, 1)
 hold on
-% plot(mag.sample)
-% stem(totalRefPoints, mag.sample(totalRefPoints, 2), 'filled')
-% stem(totalStartPoints, mag.sample(totalStartPoints, 2), 'filled')
-% stem(totalEndPoints, mag.sample(totalEndPoints, 2), 'filled')
+plot(mag.diff)
+stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'filled')
+stem(totalStartPoints, mag.diff(totalStartPoints, 2), 'filled')
+stem(totalEndPoints, mag.diff(totalEndPoints, 2), 'filled')
+legend({'x', 'y', 'z', 'ref', 'start', 'end'})
 
-plot(mag.diffSum)
-stem(totalRefPoints, mag.diffSum(totalRefPoints), 'filled')
-stem(totalStartPoints, mag.diffSum(totalStartPoints), 'filled')
-stem(totalEndPoints, mag.diffSum(totalEndPoints), 'filled')
-legend({'diffSum', 'ref', 'start', 'end'})
+% plot(mag.diffSum)
+% stem(totalRefPoints, mag.diffSum(totalRefPoints), 'filled')
+% stem(totalStartPoints, mag.diffSum(totalStartPoints), 'filled')
+% stem(totalEndPoints, mag.diffSum(totalEndPoints), 'filled')
+% legend({'diffSum', 'ref', 'start', 'end'})

@@ -9,7 +9,7 @@ if exist('featureName', 'var')
 else
     % prefix.train = 'jaemin9_p2p_orient';
     prefix.train = 'jaemin8_p2p';
-    prefix.test  = 'jaemin3_p2p';
+    prefix.test  = 'jaemin9_p2p';
     nTrainCur = 50;
 end
 
@@ -66,12 +66,16 @@ for cnt2 = 1:length(models)
 
     s = sum(strcmp(pred.(modelName), featureMatrix.test.label)) / length(featureMatrix.test.label);
     accuracys = [accuracys;s];
+    % totalAcc = unique(pred.(modelName));
+    totalAcc = unique(featureMatrix.test.label);
+    totalAcc{end + 1} = 'undefined';
 
     subplot(nRow, nCol, cnt2); 
     c = confusionmat(featureMatrix.test.label, pred.(modelName), "Order", totalAcc);
     cm = confusionchart(c, totalAcc);
 
-    cm.RowSummary = 'row-normalized';
+    sortClasses(cm, totalAcc)
+    cm.RowSummary = 'row-normalized';   
     title(modelName);
 end
 

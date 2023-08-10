@@ -1,5 +1,5 @@
 % run('step0_load_data.m')
-run('step4_classification.m')
+% run('step4_classification.m')
 
 
 distanceThreshold = 20;
@@ -11,7 +11,15 @@ chargingLatency = 200;
 startPoint = -1; % start points where accessory was initially detected
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
+% Model and training data load
+% mdlPath = 'C:\Users\Jaemin\git\MagsafeAccessoryClassification\MatlabCode\models\';
+% mdl = load([mdlPath, 'jaemin8_p2p', '.mat']);
+% mdl = mdl.mdl;
+% mdl
 
+mdl = model.svm;
+trainData = featureMatrix.train;
+    
 % High pass filter 
 rate = 100;
 order = 4;
@@ -95,15 +103,15 @@ for cnt = 1:length(data)
                 
                 if accessoryStatus == false
                     [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-                    [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+                    [~, distance] = knnsearch(trainData.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 else
                     [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
-                    [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+                    [~, distance] = knnsearch(trainData.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 end
                
         
                 if mean(distance) < distanceThreshold
-                    [preds, scores] = predict(model.knn, featureValue);
+                    [preds, scores] = predict(mdl, featureValue);
                     probs = exp(scores) ./ sum(exp(scores),2);
 
                     label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);

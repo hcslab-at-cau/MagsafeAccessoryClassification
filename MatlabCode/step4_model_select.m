@@ -14,13 +14,13 @@ confusions = struct();
 
 totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
     'wallet1', 'wallet2', 'wallet3', 'wallet4', 'holder2', 'holder3', 'holder4', 'holder5'};
-excludeAcc = {'holder3', 'holder5'};
+excludeAcc = {'holder5'};
 totalAcc = totalAcc(~ismember(totalAcc, excludeAcc));
 totalAcc{end + 1} = 'undefined';
 
-for cnt = 1:length(dirs)
-    trainDir = [char(dirs(cnt)), mode];
-    testDirs = dirs(~ismember(dirs, dirs(cnt)));
+for cnt2 = 1:length(dirs)
+    trainDir = [char(dirs(cnt2)), mode];
+    testDirs = dirs(~ismember(dirs, dirs(cnt2)));
     
     trainDataset = func_load_feature(trainDir);
     train = func_make_unit_matrix(trainDataset);
@@ -33,7 +33,7 @@ for cnt = 1:length(dirs)
         train.data(idx, :)= [];
     end
     
-    confusions(cnt).name = char(dirs(cnt));
+    confusions(cnt2).name = char(dirs(cnt2));
 
     mdl = fitcecoc(train.data, train.label, 'OptimizeHyperparameters','auto', "HyperparameterOptimizationOptions", SVMOptions);
 
@@ -62,19 +62,19 @@ for cnt = 1:length(dirs)
 
         c = confusionmat(test.label, YPred, "Order", totalAcc);
         
-        confusions(cnt).trial(cnt2).c = c;
+        confusions(cnt2).trial(cnt2).c = c;
 
         accuracy = sum(strcmp(YPred, test.label)) / length(test.label);
         accuracys(end + 1) = accuracy;
         % disp(['Accuracy: ', num2str(accuracy * 100),      
     end
 
-    confusions(cnt).accessory = totalAcc;
+    confusions(cnt2).accessory = totalAcc;
     disp(['Accuracy: ', num2str(mean(accuracys) * 100), '%']);
     totalAccuracys(end + 1) = mean(accuracys) * 100;
 end
 
-
+%%
 % Plot accuracy
 fig = figure('Name', 'Average accuracy', 'NumberTitle','off');
 clf
@@ -93,31 +93,28 @@ clf
 nRow = 3;
 nCol = 3;
 
-for cnt = 1:length(confusions)
-    accessory = confusions(cnt).accessory;
-    c = zeros(length(tmp), length(tmp));
+for cnt2 = 1:length(confusions)
+    accessory = confusions(cnt2).accessory;
+    c = zeros(length(accessory), length(accessory));
     
-    for cnt2 = 1:length(confusions(cnt).trial)
-        cs = confusions(cnt).trial(cnt2).c;
+    for cnt2 = 1:length(confusions(cnt2).trial)
+        cs = confusions(cnt2).trial(cnt2).c;
         c = c + cs;
     end
     
-    subplot(nRow, nCol, cnt);
+    subplot(nRow, nCol, cnt2);
     cm = confusionchart(c, accessory);
     sortClasses(cm, accessory)
     cm.RowSummary = 'row-normalized';
-    title([confusions(cnt).name, '_confusion matrix']);    
+    title([confusions(cnt2).name, '_confusion matrix']);    
 end
-
-
-
 return;
 %% Find best model of each dataset & evaluate with other dataset using fitcauto
 totalAccuracys = [];
 
-for cnt = 1:length(dirs)
-    trainDir = [char(dirs(cnt)), mode];
-    testDirs = dirs(~ismember(dirs, dirs(cnt)));
+for cnt2 = 1:length(dirs)
+    trainDir = [char(dirs(cnt2)), mode];
+    testDirs = dirs(~ismember(dirs, dirs(cnt2)));
     
     trainDataset = func_load_feature(trainDir);
     train = func_make_unit_matrix(trainDataset);
@@ -197,24 +194,38 @@ cm = confusionchart(c, trainAcc);
 cm.RowSummary = 'row-normalized';
 
 %% User accuracys
+clearvars accuracys
 
-for cnt = 1:length(dirs)
-    featureName = [char(dirs(cnt)), mode];
+trials = 10;
 
-    trainDataset = func_load_feature(trainDir);
-    [featureMatrix, ~] = func_make_feature_matrix(trainDataset, trainDataset, 25, true);
-    trainAcc = unique(featureMatrix.test.label);
+accuracys = struct();
 
-    mdl = fitcauto(train.data, train.label, "HyperparameterOptimizationOptions",options);
+for cnt = 1:trials
+    disp(['Trial : ', num2str(cnt)])
+    for cnt2 = 1:length(dirs)
+        trainDir = [char(dirs(cnt2)), mode];
     
-    [preds, scores] = predict(mdl, featureMatrix.test.data);
-    probs= exp(scores) ./ sum(exp(scores),2);
-
-    labels = func_predict(featureMatrix.test.label, preds, probs, trainAcc, chargingAcc);
-
-    fig = figure('Name', ['Dataset : ', featureName], 'NumberTitle','off');
-    c = confusionmat(featureMatrix.test.label, labels, "Order", trainAcc);
-    cm = confusionchart(c, trainAcc);
-
-    cm.RowSummary = 'row-normalized';
+        trainDataset = func_load_feature(trainDir);
+        [featureMatrix, ~] = func_make_feature_matrix(trainDataset, trainDataset, 25, true);
+        trainAcc = unique(featureMatrix.test.label);
+    
+        % mdl = fitcauto(train.data, train.label, "HyperparameterOptimizationOptions",options);
+        mdl = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'OptimizeHyperparameters','auto', "HyperparameterOptimizationOptions", SVMOptions);
+        
+    
+        [preds, scores] = predict(mdl, featureMatrix.test.data);
+        probs= exp(scores) ./ sum(exp(scores),2);
+       
+        % preds = func_predict(featureMatrix.test.label, preds, probs, trainAcc, chargingAcc);
+        % sum(strcmp(preds, featureMatrix.test.label)) / length(featureMatrix.test.label)
+        accuracys(cnt2).accuracy(cnt) = sum(strcmp(preds, featureMatrix.test.label)) / length(featureMatrix.test.label) * 100;
+    
+        % fig = figure('Name', ['Dataset : ', trainDir], 'NumberTitle','off');
+        % 
+        % 
+        % c = confusionmat(featureMatrix.test.label, preds, "Order", trainAcc);
+        % cm = confusionchart(c, trainAcc);
+        % 
+        % cm.RowSummary = 'row-normalized';
+    end
 end

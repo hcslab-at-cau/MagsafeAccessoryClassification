@@ -14,7 +14,7 @@ else
 end
 
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
-chargingInfo = true;
+chargingInfo = false;
 
 train = func_load_feature(prefix.train);
 test = func_load_feature(prefix.test);
@@ -51,7 +51,7 @@ for cnt2 = 1:length(models)
     prob.(modelName) = exp(scores) ./ sum(exp(scores),2);
     totalAcc = unique(featureMatrix.test.label);
 
-    pred.(modelName) = func_predict(featureMatrix.test.label, pred.(modelName), prob.(modelName), totalAcc, chargingAcc);
+    % pred.(modelName) = func_predict(featureMatrix.test.label, pred.(modelName), prob.(modelName), totalAcc, chargingAcc);
 end
 
 fig = figure('Name', ['train : ', prefix.train, '  test : ', prefix.test], 'NumberTitle','off');
@@ -64,7 +64,7 @@ accuracys = [];
 for cnt2 = 1:length(models)
     modelName = char(models(cnt2));
 
-    s = sum(strcmp(pred.(modelName), featureMatrix.test.label)) / length(featureMatrix.test.label);
+    s = sum(strcmp(pred.(modelName), featureMatrix.test.label)) / length(featureMatrix.test.label)
     accuracys = [accuracys;s];
     % totalAcc = unique(pred.(modelName));
     totalAcc = unique(featureMatrix.test.label);

@@ -8,7 +8,7 @@ SVMOptions = struct("UseParallel",true, "ShowPlots", false, "Verbose", 0);
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
 mdlPath = '../MatlabCode/models/';
-%%
+%% Find SVM
 totalAccuracys = [];
 confusions = struct();
 
@@ -18,9 +18,9 @@ excludeAcc = {'holder5'};
 totalAcc = totalAcc(~ismember(totalAcc, excludeAcc));
 totalAcc{end + 1} = 'undefined';
 
-for cnt2 = 1:length(dirs)
-    trainDir = [char(dirs(cnt2)), mode];
-    testDirs = dirs(~ismember(dirs, dirs(cnt2)));
+for cnt = 1:length(dirs)
+    trainDir = [char(dirs(cnt)), mode];
+    testDirs = dirs(~ismember(dirs, dirs(cnt)));
     
     trainDataset = func_load_feature(trainDir);
     train = func_make_unit_matrix(trainDataset);
@@ -33,7 +33,7 @@ for cnt2 = 1:length(dirs)
         train.data(idx, :)= [];
     end
     
-    confusions(cnt2).name = char(dirs(cnt2));
+    confusions(cnt).name = char(dirs(cnt));
 
     mdl = fitcecoc(train.data, train.label, 'OptimizeHyperparameters','auto', "HyperparameterOptimizationOptions", SVMOptions);
 
@@ -62,14 +62,14 @@ for cnt2 = 1:length(dirs)
 
         c = confusionmat(test.label, YPred, "Order", totalAcc);
         
-        confusions(cnt2).trial(cnt2).c = c;
+        confusions(cnt).trial(cnt2).c = c;
 
         accuracy = sum(strcmp(YPred, test.label)) / length(test.label);
         accuracys(end + 1) = accuracy;
         % disp(['Accuracy: ', num2str(accuracy * 100),      
     end
 
-    confusions(cnt2).accessory = totalAcc;
+    confusions(cnt).accessory = totalAcc;
     disp(['Accuracy: ', num2str(mean(accuracys) * 100), '%']);
     totalAccuracys(end + 1) = mean(accuracys) * 100;
 end
@@ -93,28 +93,30 @@ clf
 nRow = 3;
 nCol = 3;
 
-for cnt2 = 1:length(confusions)
-    accessory = confusions(cnt2).accessory;
+for cnt = 1:length(confusions)
+    accessory = confusions(cnt).accessory;
     c = zeros(length(accessory), length(accessory));
     
-    for cnt2 = 1:length(confusions(cnt2).trial)
-        cs = confusions(cnt2).trial(cnt2).c;
+    for cnt2 = 1:length(confusions(cnt).trial)
+        cs = confusions(cnt).trial(cnt2).c;
         c = c + cs;
     end
     
-    subplot(nRow, nCol, cnt2);
+    subplot(nRow, nCol, cnt);
     cm = confusionchart(c, accessory);
     sortClasses(cm, accessory)
     cm.RowSummary = 'row-normalized';
-    title([confusions(cnt2).name, '_confusion matrix']);    
+    title([confusions(cnt).name, '_confusion matrix']); 
+
 end
+
 return;
 %% Find best model of each dataset & evaluate with other dataset using fitcauto
 totalAccuracys = [];
 
-for cnt2 = 1:length(dirs)
-    trainDir = [char(dirs(cnt2)), mode];
-    testDirs = dirs(~ismember(dirs, dirs(cnt2)));
+for cnt = 1:length(dirs)
+    trainDir = [char(dirs(cnt)), mode];
+    testDirs = dirs(~ismember(dirs, dirs(cnt)));
     
     trainDataset = func_load_feature(trainDir);
     train = func_make_unit_matrix(trainDataset);
@@ -128,8 +130,8 @@ for cnt2 = 1:length(dirs)
     % save([mdlPath, trainDir, '.mat'], 'mdl');
     accuracys = [];
 
-    for cnt2 = 1:length(testDirs)
-        testDir = [char(dirs(cnt2)), mode];
+    for cnt = 1:length(testDirs)
+        testDir = [char(dirs(cnt)), mode];
         testDataset = func_load_feature(testDir);
         test = func_make_unit_matrix(testDataset);
         trainAcc = unique(test.label);
@@ -202,8 +204,8 @@ accuracys = struct();
 
 for cnt = 1:trials
     disp(['Trial : ', num2str(cnt)])
-    for cnt2 = 1:length(dirs)
-        trainDir = [char(dirs(cnt2)), mode];
+    for cnt = 1:length(dirs)
+        trainDir = [char(dirs(cnt)), mode];
     
         trainDataset = func_load_feature(trainDir);
         [featureMatrix, ~] = func_make_feature_matrix(trainDataset, trainDataset, 25, true);
@@ -216,9 +218,9 @@ for cnt = 1:trials
         [preds, scores] = predict(mdl, featureMatrix.test.data);
         probs= exp(scores) ./ sum(exp(scores),2);
        
-        % preds = func_predict(featureMatrix.test.label, preds, probs, trainAcc, chargingAcc);
+        preds = func_predict(featureMatrix.test.label, preds, probs, trainAcc, chargingAcc);
         % sum(strcmp(preds, featureMatrix.test.label)) / length(featureMatrix.test.label)
-        accuracys(cnt2).accuracy(cnt) = sum(strcmp(preds, featureMatrix.test.label)) / length(featureMatrix.test.label) * 100;
+        accuracys(cnt).accuracy(cnt) = sum(strcmp(preds, featureMatrix.test.label)) / length(featureMatrix.test.label) * 100;
     
         % fig = figure('Name', ['Dataset : ', trainDir], 'NumberTitle','off');
         % 

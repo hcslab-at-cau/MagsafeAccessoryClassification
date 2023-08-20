@@ -55,9 +55,12 @@ for cnt = 1:nAcc
         curTrain = train(cnt).feature(nTrainIdx, :);
         diffIdx = length(abs(length(nTrainIdx) - nTrains));
         curTrain = [curTrain;  NaN(diffIdx,3,'single')];
+
+        curTrainLabel = [repmat({train(cnt).name}, nTrains, 1); repmat({'undefined'}, diffIdx, 1)];
     else
         nTrainIdx(randperm(nTrains, nTrainCur)) = true;
         curTrain = train(cnt).feature(nTrainIdx, :);
+        curTrainLabel = repmat({train(cnt).name}, nTrainCur, 1);
     end
     
     if nTests < nTestCur
@@ -65,18 +68,38 @@ for cnt = 1:nAcc
         curTest = test(cnt).feature(nTestIdx, :);
         diffIdx = length(abs(nTestCur- nTests));
         curTest = [curTest;  NaN(diffIdx,3,'single')];
+
+        curTestLabel = [repmat({test(cnt).name}, nTests, 1); repmat({'undefined'}, diffIdx, 1)];
     else
         nTestIdx(randperm(nTests, nTestCur)) = true;
         curTest = test(cnt).feature(nTestIdx, :);
+
+        curTestLabel = repmat({test(cnt).name}, nTestCur, 1);
     end
 
     range = (cnt - 1) * nTrainCur + (1:nTrainCur);
     featureMatrix.train.data(range, :) = [vertcat(curTrain)];   
-    featureMatrix.train.label(range) = repmat({train(cnt).name}, nTrainCur, 1);
+    featureMatrix.train.label(range) = curTrainLabel;
 
     range = (cnt - 1) * nTestCur + (1:nTestCur);
     featureMatrix.test.data(range, :) = [vertcat(curTest)];
-    featureMatrix.test.label(range) = repmat({test(cnt).name}, nTestCur, 1); 
+    featureMatrix.test.label(range) = curTestLabel;
+end
+
+
+% Flush NaN
+kinds = {'train', 'test'};
+
+for cnt = 1:length(kinds)
+    kind = char(kinds(cnt));
+    tmp = featureMatrix.(kind);
     
+    k = tmp.data;
+    k(any(isnan(k), 2), :) = [];
+    tmp.data = k;
+
+    tmp.label = tmp.label(~strcmp(tmp.label, 'undefined'));
+
+    featureMatrix.(kind) = tmp;
 end
 end

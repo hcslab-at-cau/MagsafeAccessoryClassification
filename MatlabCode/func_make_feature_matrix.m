@@ -47,34 +47,41 @@ featureMatrix.test.label = cell(nAcc * nTestCur, 1);
 for cnt = 1:nAcc
     nTrains = length(train(cnt).feature);
     nTests = length(test(cnt).feature);
-    nTrainIdx = false(1, nTrains);
-    nTestIdx = false(1, nTests);
+    trainIdx = false(1, nTrains);
+    testIdx = true(1, nTests);
     
     if nTrains < nTrainCur
-        nTrainIdx(randperm(nTrains, nTrains)) = true;
-        curTrain = train(cnt).feature(nTrainIdx, :);
-        diffIdx = length(abs(length(nTrainIdx) - nTrains));
+        trainIdx(randperm(nTrains, nTrains)) = true;
+        curTrain = train(cnt).feature(trainIdx, :);
+        diffIdx = length(abs(length(trainIdx) - nTrains));
         curTrain = [curTrain;  NaN(diffIdx,3,'single')];
 
         curTrainLabel = [repmat({train(cnt).name}, nTrains, 1); repmat({'undefined'}, diffIdx, 1)];
     else
-        nTrainIdx(randperm(nTrains, nTrainCur)) = true;
-        curTrain = train(cnt).feature(nTrainIdx, :);
+        trainIdx(randperm(nTrains, nTrainCur)) = true;
+        curTrain = train(cnt).feature(trainIdx, :);
         curTrainLabel = repmat({train(cnt).name}, nTrainCur, 1);
     end
     
     if nTests < nTestCur
-        nTestIdx(randperm(nTests, nTests)) = true;
-        curTest = test(cnt).feature(nTestIdx, :);
+        curTest = test(cnt).feature(testIdx, :);
         diffIdx = length(abs(nTestCur- nTests));
-        curTest = [curTest;  NaN(diffIdx,3,'single')];
 
+        curTest = [curTest;  NaN(diffIdx,3,'single')];
         curTestLabel = [repmat({test(cnt).name}, nTests, 1); repmat({'undefined'}, diffIdx, 1)];
     else
-        nTestIdx(randperm(nTests, nTestCur)) = true;
-        curTest = test(cnt).feature(nTestIdx, :);
+        if isSame
+            testIdx(trainIdx) = false;
+        end
 
-        curTestLabel = repmat({test(cnt).name}, nTestCur, 1);
+        curTest = test(cnt).feature(testIdx, :);
+        curTestLabel = repmat({test(cnt).name}, length(find(testIdx)), 1);
+
+        if length(find(testIdx)) < nTestCur
+            diffIdx = length(abs(nTestCur- length(find(testIdx))));
+            curTest = [curTest;  NaN(diffIdx,3,'single')];
+            curTestLabel = [curTestLabel;repmat({'undefined'}, diffIdx, 1)];
+        end        
     end
 
     range = (cnt - 1) * nTrainCur + (1:nTrainCur);

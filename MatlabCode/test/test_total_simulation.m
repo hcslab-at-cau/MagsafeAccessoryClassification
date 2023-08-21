@@ -1,5 +1,5 @@
-accId = 11;
-trialId = 2;
+accId = 3;
+trialId = 1;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -14,7 +14,7 @@ acc = tmp.acc;
 
 mdlPath = 'C:\Users\Jaemin\git\MagsafeAccessoryClassification\MatlabCode\models\';
 
-mdl = load([mdlPath, 'jaemin8_p2p', '.mat']);
+mdl = load([mdlPath, 'jaemin9_p2p', '.mat']);
 mdl = mdl.mdl;
 
 % For charging status
@@ -92,6 +92,11 @@ for t = 1 + start:length(mag.sample)
         % select maximum magntiude in points
         magnitude = sum(filtfilt(b.mag, a.mag, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
         tarIdx = curPoints - startPoint + 1;
+        
+        if tarIdx(end) > 100
+            tarIdx = tarIdx(1):100;
+        end
+
         refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
         totalStartPoints(end + 1) = startPoint;
         totalEndPoints(end + 1) = t; 
@@ -169,8 +174,15 @@ plot(mag.diff)
 stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'filled')
 stem(totalStartPoints, mag.diff(totalStartPoints, 2), 'filled')
 stem(totalEndPoints, mag.diff(totalEndPoints, 2), 'filled')
-legend({'x', 'y', 'z', 'ref', 'start', 'end'})
 
+if exist('chargingTime', 'var')
+    stem(chargingTime, mag.diff(chargingTime, 2), 'filled')
+    legend({'x', 'y', 'z', 'ref', 'start', 'end', 'charging'})
+else
+    legend({'x', 'y', 'z', 'ref', 'start', 'end'})
+end
+
+clearvars chargingTime
 % plot(mag.diffSum)
 % stem(totalRefPoints, mag.diffSum(totalRefPoints), 'filled')
 % stem(totalStartPoints, mag.diffSum(totalStartPoints), 'filled')

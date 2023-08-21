@@ -1,5 +1,5 @@
-% run('step0_load_data.m')
-% run('step4_classification.m')
+run('step0_load_data.m')
+run('step4_classification.m')
 
 
 distanceThreshold = 20;
@@ -90,6 +90,10 @@ for cnt = 1:length(data)
                 % select maximum magntiude in points
                 magnitude = sum(filtfilt(b.mag, a.mag, mag.sample(startPoint:startPoint+interval-1, :)).^2, 2);
                 tarIdx = curPoints - startPoint + 1;
+
+                if tarIdx(end) > 100
+                    tarIdx = tarIdx(1):100;
+                end
                 refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
 
                 startPoint = -1;

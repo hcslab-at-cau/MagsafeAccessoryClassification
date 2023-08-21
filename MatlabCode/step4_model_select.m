@@ -1,4 +1,4 @@
-dirs = {'jaemin3', 'jaemin4', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9', 'insu1', 'junhyub1', 'Suhyeon1'};
+dirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9', 'insu1', 'junhyub1', 'Suhyeon1'};
 userDirs = {'jaemin4', 'insu1', 'junhyub1', 'Suhyeon1'};
 
 mode = '_p2p';
@@ -11,7 +11,8 @@ chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'ho
 % template.svm = templateSVM('Standardize',true, 'KernelFunction','linear', 'OutlierFraction', 0.1, ...
 %     'KernelScale', 2.0, 'Solver','ISDA');
 
-template.svm = templateSVM('Standardize',true, 'KernelFunction','linear', 'KernelScale', 2.0);
+template.svm = templateSVM('Standardize', false, 'KernelFunction', 'linear', 'KernelScale', 1.0, ...
+    'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
 
 mdlPath = '../MatlabCode/models/';
 %% Evaluation of user to user
@@ -19,7 +20,7 @@ totalAccuracys = [];
 confusions = struct();
 models = struct();
 
-% Use totalAcc rather than trainAcc, Because of accessory inconsistency in each dataset
+% Use totalAcc rather than trainAcc, Because of accessory inconsistency at each dataset
 totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
     'wallet1', 'wallet2', 'wallet3', 'wallet4', 'holder2', 'holder3', 'holder4', 'holder5'};
 excludeAcc = {'holder3', 'holder5'};
@@ -28,7 +29,7 @@ totalAcc{end + 1} = 'undefined';
 
 
 for cnt = 1:length(userDirs)
-    models(cnt).name = char(userDirs(cnt));
+    models(cnt).name = char(userDirs(cnt))
 
     testDir = [char(userDirs(cnt)), mode];
     trainDirs = userDirs(~ismember(userDirs, userDirs(cnt)));
@@ -65,7 +66,7 @@ for cnt = 1:length(userDirs)
 
     % Save model
     % save([mdlPath, trainDir, '.mat'], 'mdl');
-    
+
     idx = ismember(test.label, excludeAcc);
 
     if ~isempty(find(idx,1))
@@ -92,10 +93,16 @@ end
 plot_accuracy(totalAccuracys, confusions, userDirs, 'user to user');
 return;
 %% Train and test same user
-trials = 1000;
+trials = 100;
 
 totalAccuracys = [];
 confusions = struct();
+
+template.svm = templateSVM('Standardize', false, 'KernelFunction', 'linear', 'KernelScale', 1.0, ...
+    'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
+
+models = struct();
+plotName = 'linear stand false';
 
 for cnt = 1:length(dirs)
     testDir = [char(dirs(cnt)), mode];
@@ -110,10 +117,12 @@ for cnt = 1:length(dirs)
         trainAcc = unique(featureMatrix.test.label);
         trainAcc{end + 1} = 'undefined';
     
-        % mdl = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.svm);
+        mdl = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.svm);
         
-        mdl = fitcauto(featureMatrix.train.data, featureMatrix.train.label, "HyperparameterOptimizationOptions",options, ...
-            "learners", "svm", "OptimizeHyperparameters","auto");
+        % mdl = fitcauto(featureMatrix.train.data, featureMatrix.train.label, "HyperparameterOptimizationOptions",options, ...
+        %     "learners", "svm", "OptimizeHyperparameters","auto");
+
+        models(cnt).model = mdl;
         
         [preds, scores] = predict(mdl, featureMatrix.test.data);
         probs= exp(scores) ./ sum(exp(scores),2);
@@ -129,7 +138,7 @@ for cnt = 1:length(dirs)
     totalAccuracys(end + 1) = mean(accuracys);
 end
 
-plot_accuracy(totalAccuracys, confusions, dirs, 'PerUser')
+plot_accuracy(totalAccuracys, confusions, dirs, plotName)
 %% Find best model of each dataset & evaluate with other dataset using fitcauto
 totalAccuracys = [];
 
@@ -213,10 +222,7 @@ clf
 c = confusionmat(featureMatrix.test.label, YPred, "Order", trainAcc);
 cm = confusionchart(c, trainAcc);
 cm.RowSummary = 'row-normalized';
-
-
 %% Function for plotting
-
 function [] = plot_accuracy(accuracy, confusions, xLabels, name)
 
 if ~exist('name', 'var')
@@ -224,16 +230,22 @@ if ~exist('name', 'var')
 end
 
 fig = figure('Name', [name, '_accuracy'], 'NumberTitle','off');
+fig.Position(1:2) = [200, 0]; 
 clf
 
+accuracy(end + 1) = mean(accuracy);
+xLabels{end + 1} = 'Mean';
+
 bar(accuracy)
-ylim([80, 100])
+ylim([60, 100])
 grid on;
 xticklabels(xLabels);  
 title('Accuracy')
 
 % Plot confusions
 fig = figure('Name', [name, '_Confusions matrix'], 'NumberTitle','off');
+fig.Position(1:2) = [200, 0]; 
+
 clf
 
 n = ceil(sqrt(length(confusions)));

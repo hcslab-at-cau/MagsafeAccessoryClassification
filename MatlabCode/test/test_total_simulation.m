@@ -1,5 +1,5 @@
-accId = 3;
-trialId = 1;
+accId = 1;
+trialId = 2;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -43,6 +43,7 @@ prevPoints = [];
 totalRefPoints = [];
 totalStartPoints = [];
 totalEndPoints = [];
+totalDecisionPoints = [];
 
 tic
 interval = 100;
@@ -151,6 +152,7 @@ for t = 1 + start:length(mag.sample)
 
             accessoryStatus = ~accessoryStatus;        
             totalRefPoints(end + 1) = refPoint;
+            totalDecisionPoints(end + 1) = t;
         end
         disp('end!')
         
@@ -174,12 +176,13 @@ plot(mag.diff)
 stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'filled')
 stem(totalStartPoints, mag.diff(totalStartPoints, 2), 'filled')
 stem(totalEndPoints, mag.diff(totalEndPoints, 2), 'filled')
+stem(totalDecisionPoints, mag.diff(totalDecisionPoints, 2), 'filled')
 
 if exist('chargingTime', 'var')
     stem(chargingTime, mag.diff(chargingTime, 2), 'filled')
-    legend({'x', 'y', 'z', 'ref', 'start', 'end', 'charging'})
+    legend({'x', 'y', 'z', 'ref', 'start', 'end', 'decision', 'charging'})
 else
-    legend({'x', 'y', 'z', 'ref', 'start', 'end'})
+    legend({'x', 'y', 'z', 'ref', 'start', 'decision', 'end'})
 end
 
 clearvars chargingTime

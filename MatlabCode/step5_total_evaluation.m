@@ -81,16 +81,18 @@ for cnt = 1:length(statistics)
         end
 
         result = results(cnt).trial(cnt2).result;
-        totalAttach = length(detect)/2;
+        totalAttach = 0;
         count = 0;
         
         for cnt3 = 1:length(result)
             trueLabel = result(cnt3).label;
             predictLabel = result(cnt3).pLabel;
 
-            if strcmp(predictLabel, 'detached')
+            if strcmp(predictLabel, 'detach')
                 continue;
             end
+
+            totalAttach = totalAttach + 1;
             
             if strcmp(trueLabel, predictLabel)
                 count = count + 1;
@@ -188,7 +190,7 @@ title('classification accuracy')
 
 labels.predict = [];
 labels.label = [];
-totalAcc = unique(featureMatrix.train.label);
+totalAcc = unique(featureMatrix.label);
 
 
 for cnt = 1:length(results)
@@ -203,6 +205,10 @@ for cnt = 1:length(results)
     for cnt2 = 1:nTrials
         result = results(cnt).trial(cnt2).result;
         
+        if results(cnt).trial(cnt2).detection == 0
+            continue
+        end
+
         preds = {result.pLabel};
         predLabel = preds(~ismember(preds, 'detach'));
   

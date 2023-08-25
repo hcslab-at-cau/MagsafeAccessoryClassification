@@ -1,5 +1,4 @@
 dirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9', 'insu1', 'junhyub1', 'Suhyeon1'};
-userDirs = {'jaemin4', 'insu1', 'junhyub1', 'Suhyeon1'};
 
 mode = '_p2p';
 
@@ -8,28 +7,33 @@ SVMOptions = struct("UseParallel",true, "ShowPlots", false, "Verbose", 0);
 options = struct("UseParallel",true, "ShowPlots", false, "Verbose", 0);
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
-% template.svm = templateSVM('Standardize',true, 'KernelFunction','linear', 'OutlierFraction', 0.1, ...
-%     'KernelScale', 2.0, 'Solver','ISDA');
+template.linearSVM = templateSVM('Standardize', false, 'KernelFunction', 'linear', 'KernelScale', 1.0, ...
+    'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
 
-template.svm = templateSVM('Standardize', false, 'KernelFunction', 'linear', 'KernelScale', 1.0, ...
+gamma = 0.001;
+
+template.rbfSVM = templateSVM('Standardize', false, 'KernelFunction', 'rbf', 'KernelScale', 1/sqrt(gamma), ...
     'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
 
 mdlPath = '../MatlabCode/models/';
 %% Evaluation of user to user
+userDirs = {'jaemin5', 'insu1', 'junhyub1', 'Suhyeon1'};
 totalAccuracys = [];
 confusions = struct();
 models = struct();
 
+plotName = 'RBF SVM';
+
 % Use totalAcc rather than trainAcc, Because of accessory inconsistency at each dataset
 totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
     'wallet1', 'wallet2', 'wallet3', 'wallet4', 'holder2', 'holder3', 'holder4', 'holder5'};
-excludeAcc = {'holder3', 'holder5'};
+excludeAcc = {'holder5'};
 totalAcc = totalAcc(~ismember(totalAcc, excludeAcc));
 totalAcc{end + 1} = 'undefined';
 
 
 for cnt = 1:length(userDirs)
-    models(cnt).name = char(userDirs(cnt))
+    models(cnt).name = char(userDirs(cnt));
 
     testDir = [char(userDirs(cnt)), mode];
     trainDirs = userDirs(~ismember(userDirs, userDirs(cnt)));
@@ -59,7 +63,7 @@ for cnt = 1:length(userDirs)
     
     confusions(cnt).name = char(userDirs(cnt));
 
-    mdl = fitcecoc(train.data, train.label, "Learners", template.svm);
+    mdl = fitcecoc(train.data, train.label, "Learners", template.rbfSVM);
 
     disp(['test dir is ', testDir])
     models(cnt).model = mdl;
@@ -90,7 +94,7 @@ for cnt = 1:length(userDirs)
     totalAccuracys(end + 1) = accuracy * 100;
 end
 
-plot_accuracy(totalAccuracys, confusions, userDirs, 'user to user');
+plot_accuracy(totalAccuracys, confusions, userDirs, plotName);
 return;
 %% Train and test same user
 trials = 100;
@@ -98,11 +102,11 @@ trials = 100;
 totalAccuracys = [];
 confusions = struct();
 
-template.svm = templateSVM('Standardize', false, 'KernelFunction', 'linear', 'KernelScale', 1.0, ...
-    'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
+% template.svm = templateSVM('Standardize', false, 'KernelFunction', 'linear', 'KernelScale', 1.0, ...
+%     'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
 
 models = struct();
-plotName = 'linear stand false';
+plotName = 'rbfSVM';
 
 for cnt = 1:length(dirs)
     testDir = [char(dirs(cnt)), mode];
@@ -117,7 +121,7 @@ for cnt = 1:length(dirs)
         trainAcc = unique(featureMatrix.test.label);
         trainAcc{end + 1} = 'undefined';
     
-        mdl = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.svm);
+        mdl = fitcecoc(featureMatrix.train.data, featureMatrix.train.label, 'Learners', template.rbfSVM);
         
         % mdl = fitcauto(featureMatrix.train.data, featureMatrix.train.label, "HyperparameterOptimizationOptions",options, ...
         %     "learners", "svm", "OptimizeHyperparameters","auto");
@@ -139,6 +143,197 @@ for cnt = 1:length(dirs)
 end
 
 plot_accuracy(totalAccuracys, confusions, dirs, plotName)
+return;
+%% Train prior
+timeDirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9'};
+
+totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
+    'wallet1', 'wallet2', 'wallet3', 'wallet4', 'holder2', 'holder3', 'holder4', 'holder5'};
+excludeAcc = {'holder5'};
+totalAcc = totalAcc(~ismember(totalAcc, excludeAcc));
+totalAcc{end + 1} = 'undefined';
+
+
+tarIdx = 1;
+
+for tarIdx = 1:length(timeDirs)
+    baseDir = [char(timeDirs(tarIdx)), mode];
+    baseDataset = func_load_feature(baseDir);
+    train = func_make_unit_matrix(baseDataset);
+    
+    idx = ismember(train.label, excludeAcc);
+
+    if ~isempty(find(idx,1))
+        train.label(idx)= [];
+        train.data(idx, :)= [];
+    end
+
+    totalAccuracys = [];
+    confusions = struct();
+    
+    mdl = fitcecoc(train.data, train.label, "Learners", template.rbfSVM);
+    
+    for cnt = 1:length(timeDirs)
+        if cnt == tarIdx
+            continue;
+        end
+    
+        testDir = [char(timeDirs(cnt)), mode];
+        confusions(cnt).name = char(timeDirs(cnt));
+    
+        testDataset = func_load_feature(testDir);
+        test = func_make_unit_matrix(testDataset);
+        idx = ismember(test.label, excludeAcc);
+    
+        if ~isempty(find(idx,1))
+            test.label(idx)= [];
+            test.data(idx, :)= [];
+        end
+    
+        [preds, scores] = predict(mdl, test.data);
+        probs= exp(scores) ./ sum(exp(scores),2);
+        preds = func_predict(test.label, preds, probs, totalAcc, chargingAcc);
+    
+        accuracy = sum(strcmp(preds, test.label)) / length(test.label);
+
+        testLabel = unique(test.label);
+        testLabel{end + 1} = 'undefined';
+    
+        c = confusionmat(test.label, preds, "Order", totalAcc);
+        confusions(cnt).trial(1).c = c;
+    
+        confusions(cnt).accessory = totalAcc;
+        totalAccuracys(end + 1) = accuracy * 100;
+        disp(['Accuracy: ', num2str(accuracy * 100), '%']);
+    end
+    
+    if length(confusions) > tarIdx
+        confusions(tarIdx) = [];
+    end
+    tmpDir = timeDirs;
+    tmpDir(tarIdx) = [];
+    plot_accuracy(totalAccuracys, confusions, tmpDir, [char(timeDirs(tarIdx)), '_linear']);
+end
+
+return;
+
+%% Test Rotation dataset
+
+rotDir = 'jaemin1_rotation';
+testDirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9'};
+
+includeAcc = {'holder3'};
+excludeAcc = {'holder5'};
+
+baseDataset = func_load_feature(rotDir);
+target = func_make_unit_matrix(baseDataset);
+
+idx = ismember(target.label, includeAcc);
+
+if ~isempty(find(idx, 1))
+    target.data = target.data(idx, :);
+    target.label = target.label(idx);
+else
+    target.data = [];
+    target.label = [];
+end
+
+kernelName = 'rbfSVM';
+
+for tarIdx = 1:length(testDirs)
+    baseDir = [char(testDirs(tarIdx)), mode];
+    baseDataset = func_load_feature(baseDir);
+    train = func_make_unit_matrix(baseDataset);
+
+    if ~isempty(target.data)
+        train.data = [train.data; target.data];
+        train.label = [train.label; target.label];
+    end
+    
+    idx = ismember(train.label, excludeAcc);
+
+    if ~isempty(find(idx,1))
+        train.label(idx)= [];
+        train.data(idx, :)= [];
+    end
+
+    totalAccuracys = [];
+    confusions = struct();
+    
+    mdl = fitcecoc(train.data, train.label, "Learners", template.(kernelName));
+    
+    for cnt = 1:length(testDirs)
+        if cnt == tarIdx
+            continue;
+        end
+    
+        testDir = [char(testDirs(cnt)), mode];
+        confusions(cnt).name = char(testDirs(cnt));
+    
+        testDataset = func_load_feature(testDir);
+        test = func_make_unit_matrix(testDataset);
+        idx = ismember(test.label, excludeAcc);
+    
+        if ~isempty(find(idx,1))
+            test.label(idx)= [];
+            test.data(idx, :)= [];
+        end
+    
+        [preds, scores] = predict(mdl, test.data);
+        probs= exp(scores) ./ sum(exp(scores),2);
+        preds = func_predict(test.label, preds, probs, totalAcc, chargingAcc);
+    
+        accuracy = sum(strcmp(preds, test.label)) / length(test.label);
+
+        testLabel = unique(test.label);
+        testLabel{end + 1} = 'undefined';
+    
+        c = confusionmat(test.label, preds, "Order", totalAcc);
+        confusions(cnt).trial(1).c = c;
+    
+        confusions(cnt).accessory = totalAcc;
+        totalAccuracys(end + 1) = accuracy * 100;
+        disp(['Accuracy: ', num2str(accuracy * 100), '%']);
+    end
+    
+    if length(confusions) > tarIdx
+        confusions(tarIdx) = [];
+    end
+    tmpDir = testDirs;
+    tmpDir(tarIdx) = [];
+    plot_accuracy(totalAccuracys, confusions, tmpDir, [char(testDirs(tarIdx)), '_', kernelName]);
+end
+
+
+%% Save models
+kernelName = 'linearSVM';
+
+for cnt = 1:length(dirs)
+    trainDir = [char(dirs(cnt)), mode];
+    TrainDataset = func_load_feature(trainDir);
+    train = func_make_unit_matrix(TrainDataset);
+    
+    mdl = fitcecoc(train.data, train.label, 'Learners', template.(kernelName));
+    save([mdlPath, char(dirs(cnt)), '_', kernelName, '.mat'], 'mdl');
+end
+%% Save Model within dirs
+timeDirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9'};
+kernelName = 'rbfSVM';
+modelName = 'jaemin';
+
+trainDataset = func_load_feature([char(timeDirs(1)), '_p2p']);
+train = func_make_unit_matrix(trainDataset);
+
+for cnt2 = 2:length(timeDirs)
+    trainDataset = func_load_feature([char(timeDirs(cnt2)), '_p2p']);
+    tmp = func_make_unit_matrix(trainDataset);
+        
+    train.label = [train.label;tmp.label];
+    train.data = [train.data;tmp.data];
+end
+
+mdl = fitcecoc(train.data, train.label, 'Learners', template.(kernelName));
+save([mdlPath, modelName, kernelName, '.mat'], 'mdl');
 %% Find best model of each dataset & evaluate with other dataset using fitcauto
 totalAccuracys = [];
 
@@ -230,7 +425,7 @@ if ~exist('name', 'var')
 end
 
 fig = figure('Name', [name, '_accuracy'], 'NumberTitle','off');
-fig.Position(1:2) = [200, 0]; 
+fig.Position(1:2) = [600, 400]; 
 clf
 
 accuracy(end + 1) = mean(accuracy);
@@ -244,7 +439,7 @@ title('Accuracy')
 
 % Plot confusions
 fig = figure('Name', [name, '_Confusions matrix'], 'NumberTitle','off');
-fig.Position(1:2) = [200, 0]; 
+fig.Position(1:2) = [200, 400]; 
 
 clf
 

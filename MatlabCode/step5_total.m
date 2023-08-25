@@ -1,5 +1,5 @@
 run('step0_load_data.m')
-run('step4_classification.m')
+% run('step4_classification.m')
 
 
 distanceThreshold = 20;
@@ -12,14 +12,16 @@ startPoint = -1; % start points where accessory was initially detected
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
 % Model and training data load
-% mdlPath = 'C:\Users\Jaemin\git\MagsafeAccessoryClassification\MatlabCode\models\';
-% mdl = load([mdlPath, 'jaemin8_p2p', '.mat']);
-% mdl = mdl.mdl;
-% mdl
+mdlDir = 'jaemin8';
+mdlPath = '../MatlabCode/models/';
+kernelName = 'rbfSVM';
 
-mdl = model.svm;
-trainData = featureMatrix.train;
-    
+mdl = load([mdlPath, mdlDir, '_', kernelName, '.mat']);
+mdl = mdl.mdl;
+
+features = func_load_feature([mdlDir, '_p2p']);
+featureMatrix = func_make_unit_matrix(features);
+
 % High pass filter 
 rate = 100;
 order = 4;
@@ -107,10 +109,10 @@ for cnt = 1:length(data)
                 
                 if accessoryStatus == false
                     [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-                    [~, distance] = knnsearch(trainData.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+                    [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 else
                     [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
-                    [~, distance] = knnsearch(trainData.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+                    [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 end
                
         

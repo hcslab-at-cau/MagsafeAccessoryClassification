@@ -1,9 +1,9 @@
-name = 'jaemin9_p2p';
+name = 'jaemin1_rotation';
 values = func_load_feature(name);
 featureFigNum = 2;
 
 % only plot includeTable
-includeTable = {'holder3', 'charger2'};
+includeTable = {'holder3'};
 
 accNames = {values.name};
 
@@ -76,36 +76,36 @@ for cnt = 1:length(values2)
 end
 % legend(strvcat(label, label2))
 label = strvcat(label, label2);
-
+legend(label)
 %% For three
-name = 'orientation_p2p';
-values2 = func_load_feature(name);
-
-includeTable = {'holder3'};
-accNames = {values2.name};
-tmpFeature = struct();
-
-for cnt = 1:length(includeTable)
-    tmp = values2(contains(accNames, char(includeTable(cnt))));
-    tmpFeature(cnt).name = tmp.name;
-    tmpFeature(cnt).feature = tmp.feature;
-end 
-
-values2 = tmpFeature;
-
-label3 = [];
-for cnt = 1:length(values2)
-    label3 = strvcat(label3, [values2(cnt).name, '_', name]);
-end
-
-for cnt = 1:length(values2)
-    p = values2(cnt).feature;
-
-    if cnt > 6
-        scatter3(p(:,1), p(:,2), p(:,3), 'filled');
-    else
-        scatter3(p(:,1), p(:,2), p(:,3));
-    end
-    hold on
-end
-legend(strvcat(label, label3))
+% name = 'orientation_p2p';
+% values2 = func_load_feature(name);
+% 
+% % includeTable = {'holder3'};
+% accNames = {values2.name};
+% tmpFeature = struct();
+% 
+% for cnt = 1:length(includeTable)
+%     tmp = values2(contains(accNames, char(includeTable(cnt))));
+%     tmpFeature(cnt).name = tmp.name;
+%     tmpFeature(cnt).feature = tmp.feature;
+% end 
+% 
+% values2 = tmpFeature;
+% 
+% label3 = [];
+% for cnt = 1:length(values2)
+%     label3 = strvcat(label3, [values2(cnt).name, '_', name]);
+% end
+% 
+% for cnt = 1:length(values2)
+%     p = values2(cnt).feature;
+% 
+%     if cnt > 6
+%         scatter3(p(:,1), p(:,2), p(:,3), 'filled');
+%     else
+%         scatter3(p(:,1), p(:,2), p(:,3));
+%     end
+%     hold on
+% end
+% legend(strvcat(label, label3))

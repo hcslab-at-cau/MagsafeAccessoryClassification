@@ -40,7 +40,7 @@ for cnt = 1:size(prob, 1)
         
         for k = 2:length(p)
             idx = find(p == min(maxk(p, k)));
-            
+
             if idx >= length(totalAcc)
                 continue;
             end
@@ -55,10 +55,10 @@ for cnt = 1:size(prob, 1)
                 end
                 break;
             end
-
+            
             pLabel = totalAcc(idx);
-
             if isempty(find(ismember(chargingAcc, pLabel), 1))
+ 
                 result(cnt) = pLabel;
                 break;
             end

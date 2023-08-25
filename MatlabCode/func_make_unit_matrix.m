@@ -12,8 +12,11 @@ nAcc = length(dataset);
 lFeature = 3;
 
 result = [];
-result.data = zeros(nAcc * nDataCur, lFeature);
-result.label = cell(nAcc * nDataCur, 1);
+% result.data = zeros(nAcc * nDataCur, lFeature);
+% result.label = cell(nAcc * nDataCur, 1);
+
+result.data = [];
+result.label = {};
 
 for cnt = 1:nAcc
     nDatas = length(dataset(cnt).feature);
@@ -31,10 +34,13 @@ for cnt = 1:nAcc
         curData = dataset(cnt).feature(nIdx, :);
         curDataLabel = repmat({dataset(cnt).name}, nDataCur, 1);
     end
+
+    result.data = [result.data; vertcat(curData)];
+    result.label = [result.label; curDataLabel];
     
-    range = (cnt - 1) * nDataCur + (1:nDataCur);
-    result.data(range, :) = [vertcat(curData)];
-    result.label(range) = curDataLabel;
+    % range = (cnt - 1) * nDataCur + (1:nDataCur);
+    % result.data(range, :) = [vertcat(curData)];
+    % result.label(range) = curDataLabel;
 end
 
 % Flush NaN

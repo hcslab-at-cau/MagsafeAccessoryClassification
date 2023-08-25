@@ -34,8 +34,8 @@ disp('test raw calibration diff values')
 run('test_raw_cali.m')
 
 %%
-accId = 1;
-showTrials = 1:5;
+accId = 2;
+showTrials = 1:4;
 
 if newApp == false
     groundTruthData = func_load_ground_truth(datasetName, folderName);

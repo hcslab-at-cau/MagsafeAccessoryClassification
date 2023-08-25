@@ -1,5 +1,5 @@
 accId = 1;
-trialId = 2;
+trialId = 4;
 wSize = 100;
 rate = 100;
 order = 4;
@@ -14,7 +14,7 @@ acc = tmp.acc;
 
 mdlPath = 'C:\Users\Jaemin\git\MagsafeAccessoryClassification\MatlabCode\models\';
 
-mdl = load([mdlPath, 'jaemin9_p2p', '.mat']);
+mdl = load([mdlPath, 'jaeminrbfSVM', '.mat']);
 mdl = mdl.mdl;
 
 % For charging status
@@ -114,10 +114,10 @@ for t = 1 + start:length(mag.sample)
           
         if accessoryStatus == false
             [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-            [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+            [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
         else
             [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
-            [~, distance] = knnsearch(featureMatrix.train.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+            [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
         end
 
         if accessoryStatus
@@ -164,19 +164,23 @@ end
 toc
 
 % Plot for results
-figure(1)
+fig = figure(1);
+
+fig.Position(1:2) = [0, 200];
 clf
 
 nRow = 1;
 nCol = 1;
 
+colors = rand(5, 3);
+
 subplot(nRow, nCol, 1)
 hold on
 plot(mag.diff)
-stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'filled')
-stem(totalStartPoints, mag.diff(totalStartPoints, 2), 'filled')
-stem(totalEndPoints, mag.diff(totalEndPoints, 2), 'filled')
-stem(totalDecisionPoints, mag.diff(totalDecisionPoints, 2), 'filled')
+stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'LineStyle','none', 'Marker','+')
+stem(totalStartPoints, mag.diff(totalStartPoints, 2), 'LineStyle','none', 'Marker', 'o')
+stem(totalEndPoints, mag.diff(totalEndPoints, 2), 'LineStyle','none', 'Marker','x')
+stem(totalDecisionPoints, mag.diff(totalDecisionPoints, 2), 'LineStyle','none', 'Marker','<')
 
 if exist('chargingTime', 'var')
     stem(chargingTime, mag.diff(chargingTime, 2), 'filled')

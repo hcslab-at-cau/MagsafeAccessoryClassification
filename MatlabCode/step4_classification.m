@@ -8,8 +8,8 @@ if exist('featureName', 'var')
     clearvars featureName
 else
     % prefix.train = 'jaemin9_p2p_orient';
-    prefix.train = 'jaemin8_p2p';
-    prefix.test  = 'jaemin9_p2p';
+    prefix.train = 'jaemin9_p2p';
+    prefix.test  = 'jaemin5_p2p';
     nTrainCur = 50;
 end
 
@@ -68,6 +68,10 @@ for cnt2 = 1:length(models)
     accuracys = [accuracys;s];
     % totalAcc = unique(pred.(modelName));
     totalAcc = unique(featureMatrix.test.label);
+    
+    if ~isempty(find(ismember(totalAcc, 'undefined'), 1))
+        totalAcc = totalAcc(~strcmp(totalAcc, 'undefined'));
+    end
     totalAcc{end + 1} = 'undefined';
 
     subplot(nRow, nCol, cnt2); 

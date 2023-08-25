@@ -171,7 +171,7 @@ end
 toc
 %% plot features
 % featureName = folderName;
-featureName = 'orientation';
+featureName = 'test';
 
 featureFigNum = 40;
 usingGroundTruth = true;
@@ -181,14 +181,14 @@ run('plot_feature.m')
 func_save_feature(values, [featureName, '_p2p'])
 % func_save_feature(values, [folderName, '_p2p_orient'])
 
-featureFigNum = featureFigNum + 1;
-
-feature = featureRange;
-run('plot_feature.m')
-func_save_feature(values, [featureName, '_p2pRange'])
-
-featureFigNum = featureFigNum + 1;
-
-feature = featureRangeRange;
-run('plot_feature.m')
-func_save_feature(values, [featureName, '_r2r'])
+% featureFigNum = featureFigNum + 1;
+% 
+% feature = featureRange;
+% run('plot_feature.m')
+% func_save_feature(values, [featureName, '_p2pRange'])
+% 
+% featureFigNum = featureFigNum + 1;
+% 
+% feature = featureRangeRange;
+% run('plot_feature.m')
+% func_save_feature(values, [featureName, '_r2r'])

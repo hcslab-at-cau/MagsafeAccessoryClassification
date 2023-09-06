@@ -1,3 +1,4 @@
+clear exp
 dirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9', 'insu1', 'junhyub1', 'Suhyeon1'};
 
 mode = '_p2p';
@@ -16,13 +17,6 @@ template.rbfSVM = templateSVM('Standardize', false, 'KernelFunction', 'rbf', 'Ke
     'BoxConstraint', 1.0, 'SaveSupportVectors', true, 'Solver', 'SMO');
 
 mdlPath = '../MatlabCode/models/';
-%% Evaluation of user to user
-userDirs = {'jaemin5', 'insu1', 'junhyub1', 'Suhyeon1'};
-totalAccuracys = [];
-confusions = struct();
-models = struct();
-
-plotName = 'RBF SVM';
 
 % Use totalAcc rather than trainAcc, Because of accessory inconsistency at each dataset
 totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
@@ -30,7 +24,13 @@ totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
 excludeAcc = {'holder5'};
 totalAcc = totalAcc(~ismember(totalAcc, excludeAcc));
 totalAcc{end + 1} = 'undefined';
+%% Evaluation of user to user
+userDirs = {'jaemin5', 'insu1', 'junhyub1', 'Suhyeon1'};
+totalAccuracys = [];
+confusions = struct();
+models = struct();
 
+plotName = 'RBF SVM';
 
 for cnt = 1:length(userDirs)
     models(cnt).name = char(userDirs(cnt));
@@ -82,14 +82,14 @@ for cnt = 1:length(userDirs)
     probs = exp(scores) ./ sum(exp(scores),2);
 
     % Consider charging status
-    preds = func_predict(test.label, preds, probs, totalAcc, chargingAcc);
+    preds = func_predict(test.label, preds, probs, mdl.ClassNames, chargingAcc);
 
-    c = confusionmat(test.label, preds, "Order", totalAcc);
+    c = confusionmat(test.label, preds, "Order", mdl.ClassNames);
     confusions(cnt).trial(1).c = c;
 
     accuracy = sum(strcmp(preds, test.label)) / length(test.label);
 
-    confusions(cnt).accessory = totalAcc;
+    confusions(cnt).accessory = mdl.ClassNames;
     disp(['Accuracy: ', num2str(accuracy * 100), '%']);
     totalAccuracys(end + 1) = accuracy * 100;
 end
@@ -132,13 +132,13 @@ for cnt = 1:length(dirs)
         probs= exp(scores) ./ sum(exp(scores),2);
         
         % Consider charing status
-        preds = func_predict(featureMatrix.test.label, preds, probs, trainAcc, chargingAcc);
+        preds = func_predict(featureMatrix.test.label, preds, probs, mdl.ClassNames, chargingAcc);
         accuracys(end + 1) = sum(strcmp(preds, featureMatrix.test.label)) / length(featureMatrix.test.label) * 100;
 
-        c = confusionmat(featureMatrix.test.label, preds, "Order", trainAcc);
+        c = confusionmat(featureMatrix.test.label, preds, "Order", mdl.ClassNames);
         confusions(cnt).trial(cnt2).c = c;
     end
-    confusions(cnt).accessory = trainAcc;
+    confusions(cnt).accessory = mdl.ClassNames;
     totalAccuracys(end + 1) = mean(accuracys);
 end
 
@@ -152,7 +152,6 @@ totalAcc = {'batterypack1', 'charger1', 'charger2', 'griptok1', 'griptok2', ...
 excludeAcc = {'holder5'};
 totalAcc = totalAcc(~ismember(totalAcc, excludeAcc));
 totalAcc{end + 1} = 'undefined';
-
 
 tarIdx = 1;
 
@@ -192,17 +191,17 @@ for tarIdx = 1:length(timeDirs)
     
         [preds, scores] = predict(mdl, test.data);
         probs= exp(scores) ./ sum(exp(scores),2);
-        preds = func_predict(test.label, preds, probs, totalAcc, chargingAcc);
+        preds = func_predict(test.label, preds, probs, mdl.ClassNames, chargingAcc);
     
         accuracy = sum(strcmp(preds, test.label)) / length(test.label);
 
         testLabel = unique(test.label);
         testLabel{end + 1} = 'undefined';
     
-        c = confusionmat(test.label, preds, "Order", totalAcc);
+        c = confusionmat(test.label, preds, "Order", mdl.ClassNames);
         confusions(cnt).trial(1).c = c;
     
-        confusions(cnt).accessory = totalAcc;
+        confusions(cnt).accessory = mdl.ClassNames;
         totalAccuracys(end + 1) = accuracy * 100;
         disp(['Accuracy: ', num2str(accuracy * 100), '%']);
     end
@@ -220,25 +219,95 @@ return;
 %% Test Rotation dataset
 
 rotDir = 'jaemin1_rotation';
-testDirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9'};
+% testDirs = {'jaemin3', 'jaemin4', 'jaemin5', 'jaemin6', 'jaemin7', 'jaemin8', 'jaemin9'};
+testDirs = dirs;
+% testDirs = {'jaemin7', 'jaemin9'};
 
-includeAcc = {'holder3'};
-excludeAcc = {'holder5'};
+includeAcc = {'none'};
+excludeAcc = {'holder5', 'holder3-charge'};
 
 baseDataset = func_load_feature(rotDir);
 target = func_make_unit_matrix(baseDataset);
 
 idx = ismember(target.label, includeAcc);
 
-if ~isempty(find(idx, 1))
-    target.data = target.data(idx, :);
-    target.label = target.label(idx);
-else
-    target.data = [];
-    target.label = [];
-end
+% if ~isempty(find(idx, 1))
+%     target.data = target.data(idx, :);
+%     target.label = target.label(idx);
+% else
+%     target.data = [];
+%     target.label = [];
+% end
 
 kernelName = 'rbfSVM';
+
+% for tarIdx = 1:length(testDirs)
+%     baseDir = [char(testDirs(tarIdx)), mode];
+%     baseDataset = func_load_feature(baseDir);
+%     train = func_make_unit_matrix(baseDataset);
+% 
+%     if ~isempty(target.data)
+%         train.data = [train.data; target.data];
+%         train.label = [train.label; target.label];
+%     end
+% 
+%     idx = ismember(train.label, excludeAcc);
+% 
+%     if ~isempty(find(idx,1))
+%         train.label(idx)= [];
+%         train.data(idx, :)= [];
+%     end
+% 
+%     totalAccuracys = [];
+%     confusions = struct();
+% 
+%     mdl = fitcecoc(train.data, train.label, "Learners", template.(kernelName));
+% 
+%     for cnt = 1:length(testDirs)
+%         if cnt == tarIdx
+%             continue;
+%         end
+% 
+%         testDir = [char(testDirs(cnt)), mode];
+%         confusions(cnt).name = char(testDirs(cnt));
+% 
+%         testDataset = func_load_feature(testDir);
+%         test = func_make_unit_matrix(testDataset);
+%         idx = ismember(test.label, excludeAcc);
+% 
+%         if ~isempty(find(idx,1))
+%             test.label(idx)= [];
+%             test.data(idx, :)= [];
+%         end
+% 
+%         [preds, scores] = predict(mdl, test.data);
+%         probs= exp(scores) ./ sum(exp(scores),2);
+%         preds = func_predict(test.label, preds, probs, mdl.ClassNames, chargingAcc);
+% 
+%         accuracy = sum(strcmp(preds, test.label)) / length(test.label);
+% 
+%         testLabel = unique(test.label);
+%         testLabel{end + 1} = 'undefined';
+% 
+%         c = confusionmat(test.label, preds, "Order", mdl.ClassNames);
+%         confusions(cnt).trial(1).c = c;
+% 
+%         confusions(cnt).accessory = mdl.ClassNames;
+%         totalAccuracys(end + 1) = accuracy * 100;
+%         disp(['Accuracy: ', num2str(accuracy * 100), '%']);
+%     end
+% 
+%     if length(confusions) > tarIdx
+%         confusions(tarIdx) = [];
+%     end
+%     tmpDir = testDirs;
+%     tmpDir(tarIdx) = [];
+%     plot_accuracy(totalAccuracys, confusions, tmpDir, [char(testDirs(tarIdx)), '_', kernelName]);
+% end
+
+
+totalAccuracys = [];
+confusions = struct();
 
 for tarIdx = 1:length(testDirs)
     baseDir = [char(testDirs(tarIdx)), mode];
@@ -256,12 +325,11 @@ for tarIdx = 1:length(testDirs)
         train.label(idx)= [];
         train.data(idx, :)= [];
     end
-
-    totalAccuracys = [];
-    confusions = struct();
     
     mdl = fitcecoc(train.data, train.label, "Learners", template.(kernelName));
     
+    test = struct('data', [] ,'label',[]);
+
     for cnt = 1:length(testDirs)
         if cnt == tarIdx
             continue;
@@ -271,40 +339,33 @@ for tarIdx = 1:length(testDirs)
         confusions(cnt).name = char(testDirs(cnt));
     
         testDataset = func_load_feature(testDir);
-        test = func_make_unit_matrix(testDataset);
-        idx = ismember(test.label, excludeAcc);
-    
-        if ~isempty(find(idx,1))
-            test.label(idx)= [];
-            test.data(idx, :)= [];
-        end
-    
-        [preds, scores] = predict(mdl, test.data);
-        probs= exp(scores) ./ sum(exp(scores),2);
-        preds = func_predict(test.label, preds, probs, totalAcc, chargingAcc);
-    
-        accuracy = sum(strcmp(preds, test.label)) / length(test.label);
+        testMatrix = func_make_unit_matrix(testDataset);
+        
+        test.data = [test.data;testMatrix.data];
+        test.label = [test.label;testMatrix.label];
+    end
 
-        testLabel = unique(test.label);
-        testLabel{end + 1} = 'undefined';
-    
-        c = confusionmat(test.label, preds, "Order", totalAcc);
-        confusions(cnt).trial(1).c = c;
-    
-        confusions(cnt).accessory = totalAcc;
-        totalAccuracys(end + 1) = accuracy * 100;
-        disp(['Accuracy: ', num2str(accuracy * 100), '%']);
+    idx = ismember(test.label, excludeAcc);
+
+    if ~isempty(find(idx,1))
+        test.label(idx)= [];
+        test.data(idx, :)= [];
     end
-    
-    if length(confusions) > tarIdx
-        confusions(tarIdx) = [];
-    end
-    tmpDir = testDirs;
-    tmpDir(tarIdx) = [];
-    plot_accuracy(totalAccuracys, confusions, tmpDir, [char(testDirs(tarIdx)), '_', kernelName]);
+
+    [preds, scores] = predict(mdl, test.data);
+    probs= exp(scores) ./ sum(exp(scores),2);
+    preds = func_predict(test.label, preds, probs, mdl.ClassNames, chargingAcc);
+
+    accuracy = sum(strcmp(preds, test.label)) / length(test.label);
+    c = confusionmat(test.label, preds, "Order", mdl.ClassNames);
+    confusions(tarIdx).trial(1).c = c;
+
+    confusions(tarIdx).accessory = mdl.ClassNames;
+    totalAccuracys(end + 1) = accuracy * 100;
+    disp(['Accuracy: ', num2str(accuracy * 100), '%']);
 end
 
-
+plot_accuracy(totalAccuracys, confusions, testDirs, ['Rotation_', kernelName]);
 %% Save models
 kernelName = 'linearSVM';
 

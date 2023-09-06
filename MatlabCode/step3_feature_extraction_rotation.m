@@ -52,6 +52,7 @@ end
 %% plot rotation features
 values = struct();
 
+
 for cnt = 1:length(rotationFeatures)
     value = [];
     values(cnt).name = rotationFeatures(cnt).name;
@@ -66,6 +67,10 @@ for cnt = 1:length(rotationFeatures)
     values(cnt).feature = value;
 end
 
+acc = {'griptok1', 'holder4'};
+totalAcc = {values.name};
+
+values = values(~ismember(totalAcc, acc));
 
 label = [];
 for cnt = 1:length(values)
@@ -87,6 +92,7 @@ for cnt = 1:length(values)
     end
     hold on
 end
+
 
 legend(label)
 xlabel('x')

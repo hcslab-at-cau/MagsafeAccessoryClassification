@@ -16,7 +16,7 @@ order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 
 wSize = 1 * rate;
-calibrationRange = (1:200); % For raw magnetometer calibration
+calibrationRange = (1:300); % For raw magnetometer calibration
 
 % Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');
@@ -49,11 +49,9 @@ for cnt = 1:length(data)
                     cur.dAngle = zeros(length(cur.sample), 1); % Extract the amount of changes in angle
 
                     % Calibrate raw magnetometer value
-                    cur.sample(1, :) = (cur.sample(1, :) - bias) * calibrationMatrix; 
-                    % cur.sample(1, :) = (cur.sample(1, :) - bias);
+                    cur.sample= (cur.sample - bias) * calibrationMatrix; 
+
                     for cnt4 = 2:length(cur.sample)
-                        cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias) * calibrationMatrix;
-                        % cur.sample(cnt4, :) = (cur.sample(cnt4, :) - bias);
                         cur.dAngle(cnt4) = subspace(cur.sample(cnt4, :)', cur.sample(cnt4 - 1, :)');
                     end
 

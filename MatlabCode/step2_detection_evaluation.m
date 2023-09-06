@@ -78,6 +78,10 @@ for cnt = 1:length(data)
             detectedTime = detect(t);
             range = detectedTime + wRange;
 
+            if range(end) > length(filter)
+                range = range(1):length(filter);
+            end
+
             if length(find(filter(range))) > 0
                 if mod(t,2) == 1 % attach
                     attachCnt = attachCnt + 1;

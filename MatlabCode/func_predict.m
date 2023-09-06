@@ -3,7 +3,6 @@ function result = func_predict(label, pred, prob, totalAcc, chargingAcc)
 
 result = pred;
 
-
 for cnt = 1:size(prob, 1)
     p = prob(cnt, :);
 
@@ -37,7 +36,6 @@ for cnt = 1:size(prob, 1)
         end
     % Accessory is not related to charging & Prediction result is related to charging
     elseif isempty(find(ismember(chargingAcc, label(cnt)), 1)) && ~isempty(find(ismember(chargingAcc, result(cnt)), 1)) 
-        
         for k = 2:length(p)
             idx = find(p == min(maxk(p, k)));
 

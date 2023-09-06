@@ -1,32 +1,44 @@
 run('step0_load_data.m')
-% run('step4_classification.m')
+clear exp
+idx = ismember({data.name}, {'None'});
+if ~isempty(find(idx, 1))
+    data = data(~idx);
+end
 
+% run('step4_classification.m')
 
 distanceThreshold = 20;
 interval = 100;
 start = 100;
 wSize = 100;
 extractInterval = (-wSize:wSize);
+
+attachInterval = (-wSize*2:wSize);
+detachInterval = (-wSize:2*wSize);
+calbrationInterval = (-4*wSize:-wSize);
+
 chargingLatency = 200;
 startPoint = -1; % start points where accessory was initially detected
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
 % Model and training data load
-mdlDir = 'jaemin8';
+mdlDir = 'jaemin9';
 mdlPath = '../MatlabCode/models/';
 kernelName = 'rbfSVM';
 
-mdl = load([mdlPath, mdlDir, '_', kernelName, '.mat']);
+mdl = load('rotMdl.mat');
 mdl = mdl.mdl;
 
-features = func_load_feature([mdlDir, '_p2p']);
-featureMatrix = func_make_unit_matrix(features);
+featureMatrix.data = mdl.X;
+featureMatrix.label = mdl.Y;
+
 
 % High pass filter 
 rate = 100;
 order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
-totalAcc = {data.name};
+% totalAcc = {data.name};   
+totalAcc = mdl.ClassNames;
 totalAcc{end + 1} = 'undefined';
 
 results = struct();
@@ -41,6 +53,7 @@ for cnt = 1:length(data)
         cur = struct();
 
         mag = tmp.mag;
+        rmag = tmp.rmag;
         acc = tmp.acc;
         gyro = tmp.gyro;
 
@@ -49,10 +62,13 @@ for cnt = 1:length(data)
         curPoints = []; 
         prevPoints = [];
         cnt3 = 1; % count for detection
-        
+        distanceCnt = 0; % Count for distance filter 
+
         mag.dAngle = zeros(length(mag.sample), 1);
         mag.inferAngle = zeros(length(mag.sample), 1); 
 
+        lResult = min([length(gyro.sample), length(mag.sample)]);
+        
         for t = 2:start
             mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
             euler = gyro.sample(t, :) * 1/rate;
@@ -62,7 +78,7 @@ for cnt = 1:length(data)
             mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
         end
 
-        for t = 1 + start:length(mag.sample)
+        for t = 1 + start:lResult
             mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
             euler = gyro.sample(t, :) * 1/rate;
             rotm = eul2rotm(euler, 'XYZ');
@@ -106,32 +122,47 @@ for cnt = 1:length(data)
             % Feature extraction using charging status
             if refPoint ~= -1 && (refPoint + chargingLatency <= t || t == length(mag.sample))
                 extractRange = refPoint + extractInterval;
+                calibrationRange = refPoint + calbrationInterval;
+
+                if calibrationRange(1) < 1
+                    calibrationRange = 1:calibrationRange(end);
+                end
                 
+                % Calibrate magnetometer
+                [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
+
+                [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
+
+                % knnsearch for remove false-positive
                 if accessoryStatus == false
-                    [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
                     [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
                 else
-                    [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
-                    [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
+                    [~, distance] = knnsearch(featureMatrix.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
                 end
-               
         
                 if mean(distance) < distanceThreshold
                     [preds, scores] = predict(mdl, featureValue);
                     probs = exp(scores) ./ sum(exp(scores),2);
 
+                    % Consider charing status
                     label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
                     
                     accessoryStatus = ~accessoryStatus;
                     cur(cnt3).detect = refPoint;
                     cur(cnt3).feature = featureValue;
+                    
+                    cur(cnt3).oLabel = char(preds); % Original Label
+
                     if accessoryStatus == true
-                        cur(cnt3).pLabel = char(label);
+                        cur(cnt3).pLabel = char(label); % Predicted Label
                     else
                         cur(cnt3).pLabel = 'detach';
                     end
-                    cur(cnt3).label = accName;
+
+                    cur(cnt3).label = accName; % True label
                     cnt3 = cnt3 + 1;
+                else
+                    distanceCnt = distanceCnt + 1;
                 end
                 
                 refPoint = -1;
@@ -140,6 +171,7 @@ for cnt = 1:length(data)
         
         results(cnt).trial(cnt2).result = cur;
         results(cnt).trial(cnt2).detection = sum(cnt3-1);
+        results(cnt).trial(cnt2).distanceCnt = distanceCnt;
     end
 end
 toc

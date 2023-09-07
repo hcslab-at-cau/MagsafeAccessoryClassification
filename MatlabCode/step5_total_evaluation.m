@@ -1,172 +1,101 @@
-% fix overall
-
 if ~newApp
     groundTruth = func_load_ground_truth(datasetName, folderName);
     interval = (-100:100);
 else
     interval = (-200:50);
 end
+% Detection evaluation & Classifcation Accuracy filtered by detection
+
 statistics = struct();
+
 
 for cnt = 1:length(results)
     cur = struct();
-    accName = data(cnt).name;
     nTrials = length(results(cnt).trial);
-    statistics(cnt).name = accName;
-    total = 0;
+    statistics(cnt).name = results(cnt).name;
 
     for cnt2 = 1:nTrials
-        if results(cnt).trial(cnt2).detection == 0
-            continue
-        end
         result = results(cnt).trial(cnt2).result;
 
         if newApp
-            detect = data(cnt).trial(cnt2).detect.sample;
+            trueDetection = data(cnt).trial(cnt2).detect.sample;
         else
-            detect = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
+            trueDetection = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
         end
         
-        attachCnt = 0;
-        detachCnt = 0; 
-        total = total + length(detect);
+        detected = cell2mat({result.detect});
+        count = 1;
 
-        detectedTime = cell2mat({result.detect});
-        totalDetection = length(detectedTime);
-
-        for t = 1:length(detect)
-            clickedTime = detect(t);
-            wRange = clickedTime + interval;
-
-            if ~isempty(find(ismember(wRange, detectedTime), 1))
-                idx = find(ismember(detectedTime, wRange));
-
+        for cnt3 = 1:length(trueDetection)
+            t = trueDetection(cnt3);
+            range = t + interval;
+            
+            % Detection
+            if ~isempty(find(ismember(detected, range), 1))
+                idx = find(ismember(detected, range));
+                
+                % Select closest index
                 if length(idx) ~= 1
-                    m = abs(clickedTime-idx(1));
+                    m = abs(t-idx(1));
                     selectedIdx = idx(1);
 
                     for k = 2:length(idx)
-                        if abs(clickedTime-idx(k)) < m
-                            m = abs(clickedTime-idx(k));
+                        if abs(t-idx(k)) < m
+                            m = abs(t-idx(k));
                             selectedIdx = idx(k);
                         end
                     end
                     idx = selectedIdx;
                 end
-                
-                if strcmp(result(idx).pLabel, 'detach')
-                    detachCnt = detachCnt + 1;
-                else
-                    attachCnt = attachCnt + 1;
+
+                % If this point is unmatched with attach/detach
+                if mod(cnt3, 2) == 1 && strcmp(result(idx).pLabel, 'detach') || mod(cnt3, 2) == 0 && ~strcmp(result(idx).pLabel, 'detach')
+                    % True : Attach, Predicted : Detach || True : Detach Predicted : Attach
+                    continue;                    
                 end
-            end
-        end
 
-        cur.trial(cnt2).attachCount = attachCnt;
-        cur.trial(cnt2).detachCount = detachCnt;
-        cur.trial(cnt2).falsePositive = totalDetection - attachCnt - detachCnt; 
-    end
-
-    if total == 0
-        statistics(cnt) = []; % fix
-        continue;
-    end
-
-    statistics(cnt).total = total;
-    statistics(cnt).detectionResult = cur;
-    statistics(cnt).attach = sum([cur.trial.attachCount], 2);
-    statistics(cnt).detach = sum([cur.trial.detachCount], 2);
-    statistics(cnt).fp = sum([cur.trial.falsePositive], 2);
-end
-%%
-for cnt = 1:length(statistics)
-    cur = struct();
-    accName = data(cnt).name;
-    nTrials = length(results(cnt).trial);
-    total = 0;
-
-    for cnt2 = 1:nTrials
-        if results(cnt).trial(cnt2).detection == 0
-            continue
-        end
-        total = 1;
-
-        if newApp
-            detect = data(cnt).trial(cnt2).detect.sample;
-        else
-            detect = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
-        end
-
-        result = results(cnt).trial(cnt2).result;
-        totalAttach = 0;
-        count = 0;
-        
-        for cnt3 = 1:length(result)
-            refPoint = result(cnt3).detect;
-            
-            if isempty(find((detect - 200 < refPoint) & (detect+50 > refPoint), 1))
-                trueLabel = 'undefined';  % false-positive
-            else
-                trueLabel = result(cnt3).label;
-            end
-     
-            predictLabel = result(cnt3).pLabel;
-
-            if strcmp(predictLabel, 'detach')
-                continue;
-            end
-
-            if strcmp(trueLabel, predictLabel)
+                cur(cnt2).trial(count).refPoint = detected(idx);
+                cur(cnt2).trial(count).clickPoint = t;
+                cur(cnt2).trial(count).pLabel = result(idx).pLabel;
                 count = count + 1;
             end
         end
+
+        % Detection accuracy
+        attachNumber = length(find(~ismember({cur(cnt2).trial.pLabel}, 'detach')));
+        cur(cnt2).attachCount = attachNumber;
+        cur(cnt2).detachCount = length(cur(cnt2).trial) - attachNumber;
+        cur(cnt2).totalDetectionCount = length(trueDetection);
+        cur(cnt2).falsePositive = length(result) - length(cur(cnt2).trial); 
+
+        % Classification accuracy
+        predictedLabels = {cur(cnt2).trial.pLabel};
+        predictedLabels(ismember(predictedLabels, 'detach')) = [];
         
-        cur.trial(cnt2).correct = count;
-        cur.trial(cnt2).totalAttach = length(detect) / 2;
+        cur(cnt2).trueLabelCount = length(find(ismember(predictedLabels, statistics(cnt).name)));
+        cur(cnt2).totalLabelCount = length(predictedLabels); 
     end
 
-    
-    if isempty(fieldnames(cur))
-        cur.trial(1).correct = 0;
-        cur.trial(1).totalAttach = 0;
-    end
+    statistics(cnt).result = cur;
+    statistics(cnt).attachAccuracy = sum(cell2mat({cur.attachCount}))/sum(cell2mat({cur.totalDetectionCount})/2) * 100;
+    statistics(cnt).detachAccuracy = sum(cell2mat({cur.detachCount}))/sum(cell2mat({cur.totalDetectionCount})/2) * 100;
+    statistics(cnt).falsePositive = sum(cell2mat({cur.falsePositive}));
 
-    statistics(cnt).classificationResult = cur;
-    if isempty(statistics(cnt).attach) 
-        statistics(cnt).classificationAccuracy = 0;
-    elseif statistics(cnt).attach == 0
-        statistics(cnt).classificationAccuracy = 0;
-    else
-        statistics(cnt).classificationAccuracy = sum([cur.trial.correct], 2)/statistics(cnt).attach * 100;
-    end
-    
+    statistics(cnt).classificationAccuracy = sum(cell2mat({cur.trueLabelCount}))/sum(cell2mat({cur.totalLabelCount})) * 100;
 end
 
 %% Show Detection accuracy
-truePositive = zeros(2, length(statistics)+1);
-falsePositive = zeros(1, length(statistics)+1);
+truePositive = zeros(2, length(statistics));
 accNames = {statistics.name};
 
-for cnt = 1:length(statistics)
-    detect = statistics(cnt);
-    
-    if isempty(detect.total)
-        truePositive(1, cnt) = 0; % for attach
-        truePositive(2, cnt) = 0; % for detach
-    
-        falsePositive(cnt) = 0;
-        continue
-    end
+truePositive(1, :) = cell2mat({statistics.attachAccuracy});
+truePositive(2, :) = cell2mat({statistics.detachAccuracy});
+falsePositive = cell2mat({statistics.falsePositive});
 
-    truePositive(1, cnt) = detect.attach /(detect.total/2) * 100; % for attach
-    truePositive(2, cnt) = detect.detach /(detect.total/2) * 100; % for detach
+truePositive(1, end+1) = mean(truePositive(1, :));
+truePositive(2, end) = mean(truePositive(2, :));
+falsePositive(1, end+1) = sum(falsePositive);
 
-    falsePositive(cnt) = detect.fp;
-end
-
-truePositive(1, end) = mean(truePositive(1, 1:length(statistics)));
-truePositive(2, end) = mean(truePositive(2, 1:length(statistics)));
-falsePositive(1, end) = sum(falsePositive(1, 1:length(statistics)));
 accNames = [accNames, 'mean'];
 
 f = figure('Name', [folderName, '_accuracy']);
@@ -220,12 +149,15 @@ ylim([0, 100])
 grid on;
 xticklabels(accNames);
 title('classification accuracy')
-%% Show confusion matrix
+
+return;
+%% Show confusion matrix filtered by detection
+% fix
+
 labels.predict = [];
 labels.label = [];
 totalAcc = mdl.ClassNames;
 % totalAcc{end + 1} = 'undefined';
-
 
 for cnt = 1:length(results)
     accName = results(cnt).name;
@@ -281,96 +213,29 @@ title('confusion matrix');
 
 return;
 
-%% Evaluation knnsearch 
-distances = [];
+%% Evaluation feature extraction using ground-truth
+classificationResult = struct();
 
+attachInterval = (-2*wSize:wSize);
 
-
-values = cell2mat({results.count});
-accNames = {distances.name};
-
-f = figure('Name', 'Distance effects');
-clf
-
-nRows = 1;
-nCols = 1;
-
-f.Position(2:4) = [250, 720, 360]; 
-
-% accuracys(end + 1) = mean(accuracys);
-% accNames{end + 1} = 'mean';
-
-subplot(nRows, nCols, 1);
-bar(values)
-ylim([0, 100])
-grid on;
-xticklabels(accNames);
-title(['Distance filtering (%) threshold : ', num2str(distanceThreshold)])
-
-return;
-%%
-if ~newApp
-    groundTruth = func_load_ground_truth(datasetName, folderName);
-    interval = (-100:100);
-else
-    interval = (-200:50);
-end
-detectAccuracy = struct();
-
-for cnt = 1:length(results)
+for cnt = 1:length(data)
     cur = struct();
-    accName = data(cnt).name;
-    nTrials = length(results(cnt).trial);
-    statistics(cnt).name = accName;
-    total = 0;
+    classificationResult(cnt).name = data(cnt).name;
 
-    for cnt2 = 1:nTrials
-        if results(cnt).trial(cnt2).detection == 0
-            continue
-        end
-        result = results(cnt).trial(cnt2).result;
-
+    for cnt2 = 1:length(data(cnt).trial)
         if newApp
-            detect = data(cnt).trial(cnt2).detect.sample;
+            click = data(cnt).trial(cnt2).detect.sample;
         else
-            detect = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
-        end
-        
-        attachCnt = 0;
-        detachCnt = 0; 
-        total = total + length(detect);
-
-        detectedTime = cell2mat({result.detect});
-        totalDetection = length(detectedTime);
-
-        for t = 1:length(detect)
-            clickedTime = detect(t);
-            wRange = clickedTime + interval;
-
-            if ~isempty(find(ismember(wRange, detectedTime), 1))
-                idx = detectedTime()
-                
-                if mod(t,2) == 1 % attach
-                    attachCnt = attachCnt + 1;
-                else  % detach
-                    detachCnt = detachCnt + 1;
-                end
-            end
+            click = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
         end
 
-        cur.trial(cnt2).attachCount = attachCnt;
-        cur.trial(cnt2).detachCount = detachCnt;
-        cur.trial(cnt2).falsePositive = totalDetection - attachCnt - detachCnt; 
+        for cnt3 = click
+            
+        end
     end
 
-    if total == 0
-        detectAccuracy(cnt) = [];
-        continue;
-    end
 
-    detectAccuracy(cnt).total = total;
-    detectAccuracy(cnt).detectionResult = cur;
-    detectAccuracy(cnt).attach = sum([cur.trial.attachCount], 2);
-    detectAccuracy(cnt).detach = sum([cur.trial.detachCount], 2);
-    detectAccuracy(cnt).fp = sum([cur.trial.falsePositive], 2);
 end
+
+
+accNames

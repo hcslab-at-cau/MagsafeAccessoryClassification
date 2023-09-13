@@ -1,6 +1,6 @@
-% clear exp;
+clear exp;
 
-accId = 4;
+accId = 3;
 showTrials = 1:2;
 
 calibrationInterval = -6*wSize:-wSize*2;
@@ -24,7 +24,6 @@ mdl = mdl.mdl;
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
 
-
 for cnt = 1:length(showTrials)
     cur = data(accId).trial(showTrials(cnt));
     mag = cur.mag;
@@ -40,7 +39,7 @@ for cnt = 1:length(showTrials)
     % fig.Position(3:4) = [w*2, h];
     clf
 
-    iter = 1:2:length(click);
+    iter = 1:1:length(click);
 
     nRow = 7;
     nCol = length(iter);
@@ -136,10 +135,6 @@ for cnt = 1:length(showTrials)
             
             euler = gyro.sample(s, :) * 1/rate;
             rotm = eul2rotm(euler, 'XYZ');
-            % refMag = (rotm\(refMag)')';
-
-            % diff1s(cnt3, :) = sample(cnt3, :) - (rotm\(sample(cnt3-1, :))')';
-            % diff(cnt3, :) = sample(cnt3, :)-refMag;
             
             inferMag = (rotm\(sample(cnt3-1, :))')';
             inferAngle(cnt3) = subspace(inferMag', sample(cnt3, :)');
@@ -188,9 +183,12 @@ for cnt = 1:length(showTrials)
         sp = [];
         ep = [];
         minVal = 1000;
-        angleThreshold = mean(inferAngle(1:(x-1)));
 
-        for cnt3 = (x-1):-1:(1+winSize)
+        start = 1;
+
+        angleThreshold = mean(inferAngle(1:(x-start)));
+
+        for cnt3 = (x-start):-1:(1+winSize)
             wRange = (cnt3-winSize+1):cnt3;
 
             if mean(inferAngle(wRange)) > angleThreshold && ~isempty(sp)
@@ -200,9 +198,15 @@ for cnt = 1:length(showTrials)
             end
         end
 
-        angleThreshold = mean(inferAngle((x+1):(length(inferAngle))));
+        % if mod(cnt2, 2) == 1
+        %     start = 1;
+        % else
+        %     start = 10;
+        % end
 
-        for cnt3 = (x+1):(length(inferAngle)-1-winSize)
+        angleThreshold = mean(inferAngle((x+start):(length(inferAngle))));
+
+        for cnt3 = (x+start):(length(inferAngle)-1-winSize)
             wRange = cnt3:cnt3+winSize-1;
 
             if mean(inferAngle(wRange)) < angleThreshold
@@ -215,7 +219,7 @@ for cnt = 1:length(showTrials)
         if isempty(sp)
             sp = 1;
         else
-            sp = fix(median(sp));
+            sp = fix(median(sp)) - winSize/2 + 1;
         end
 
         if isempty(ep)
@@ -260,6 +264,7 @@ for cnt = 1:length(showTrials)
         probs = exp(scores) ./ sum(exp(scores),2);
         
         pLabel = func_predict({accName}, preds, probs, mdl.ClassNames, chargingAcc);
+
         
         subplot(nRow, nCol, nCol*6 + idx)
         hold on

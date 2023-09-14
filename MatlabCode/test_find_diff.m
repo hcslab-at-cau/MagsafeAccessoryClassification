@@ -1,12 +1,14 @@
 clear exp;
 
-accId = 3;
+accId = 4;
 showTrials = 1:2;
 
-calibrationInterval = -6*wSize:-wSize*2;
+wSize = 100;
+rate = 100;
+calibrationInterval = -6*wSize:-wSize;
 attachInterval = -wSize*2:wSize*2;
 
-lowCutoff = 1;
+lowCutoff = 1.0;
 highCutoff = 10;
 
 accName = data(accId).name
@@ -15,11 +17,16 @@ feature = objectFeature(accId).feature
 [b.low, a.low] = butter(4, lowCutoff/rate * 2, 'low');
 [b.high, a.high] = butter(4, highCutoff/rate * 2, 'high');
 
+[b.low2, a.low2] = butter(4, 10/rate * 2, 'low');
+
 mdlPath = '../MatlabCode/models/';
 mdl = load([mdlPath, 'jaeminlinearSVM', '.mat']);
 % mdl = load([mdlPath, 'rotMdl', '.mat']);
-
 mdl = mdl.mdl;
+
+featureMatrix.data = mdl.X;
+featureMatrix.label = mdl.Y;
+
 
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
@@ -39,9 +46,9 @@ for cnt = 1:length(showTrials)
     % fig.Position(3:4) = [w*2, h];
     clf
 
-    iter = 1:1:length(click);
+    iter = 1:2:length(click);
 
-    nRow = 7;
+    nRow = 10;
     nCol = length(iter);
     
     for cnt2 = iter
@@ -121,7 +128,7 @@ for cnt = 1:length(showTrials)
         % hpfMaxIdxLocal = hpfMaxIdx;
 
         [diff, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
-
+        
         % diff = zeros(length(range), 3);
         % diff1s = zeros(length(range), 3);
         % 
@@ -151,9 +158,14 @@ for cnt = 1:length(showTrials)
         stem(lst, diffOriginal(lst), 'filled')
         title([num2str(t), '-', num2str(length(calRange))])
 
+        subplot(nRow, nCol, nCol + idx)
+        hold on
+        plot(diffSum)
+        title('diff sum')
+
         lst = [hpfMaxIdx];
         
-        subplot(nRow, nCol, nCol + idx)
+        subplot(nRow, nCol, nCol*2 + idx)
         hold on
         plot(fh)
         stem(lst, fh(lst), 'filled')
@@ -161,16 +173,15 @@ for cnt = 1:length(showTrials)
         
         lst = [lpfMaxIdx];
 
-        subplot(nRow, nCol, nCol*2 + idx)
+        subplot(nRow, nCol, nCol*3 + idx)
         hold on
         plot(fl)
         stem(lst, fl(lst), 'filled')
         title(['LPF ', num2str(lowCutoff), 'Hz'])
-
         
         lst = [sp, ep] + lpfMaxIdx;
         
-        subplot(nRow, nCol, nCol*3 + idx)
+        subplot(nRow, nCol, nCol*4 + idx)
         hold on
         plot(fld)
         stem(lst, fld(lst), 'filled')
@@ -179,14 +190,15 @@ for cnt = 1:length(showTrials)
         % disp([num2str(cnt2), '_', num2str(sp), '_', num2str(ep)])
  
         x = hpfMaxIdxLocal;
-        winSize = 10;
+        winSize = 1;
         sp = [];
         ep = [];
         minVal = 1000;
 
         start = 1;
 
-        angleThreshold = mean(inferAngle(1:(x-start)));
+        % angleThreshold = mean(inferAngle(1:(x-start)));
+        angleThreshold = 0.02;
 
         for cnt3 = (x-start):-1:(1+winSize)
             wRange = (cnt3-winSize+1):cnt3;
@@ -198,39 +210,48 @@ for cnt = 1:length(showTrials)
             end
         end
 
-        % if mod(cnt2, 2) == 1
-        %     start = 1;
-        % else
-        %     start = 10;
+        % angleThreshold = mean(inferAngle((x+start):(length(inferAngle))));
+
+        % for cnt3 = (x+start):(length(inferAngle)-1-winSize)
+        %     wRange = cnt3:cnt3+winSize-1;
+        % 
+        %     if mean(inferAngle(wRange)) < angleThreshold
+        %         ep(end + 1) = cnt3;
+        %     elseif mean(inferAngle(wRange)) > angleThreshold && ~isempty(ep)
+        %         break;
+        %     end
         % end
 
-        angleThreshold = mean(inferAngle((x+start):(length(inferAngle))));
+        % if isempty(sp)
+        %     sp = 1;
+        % else
+        %     sp = fix(median(sp));
+        % end
+        % 
+        % if isempty(ep)
+        %     ep = length(inferAngle);
+        % else
+        %     ep = fix(median(ep));
+        % end
 
-        for cnt3 = (x+start):(length(inferAngle)-1-winSize)
-            wRange = cnt3:cnt3+winSize-1;
+        
+        [~, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
+        diffSum = sum(diff1s.^2, 2);
 
-            if mean(inferAngle(wRange)) < angleThreshold
-                ep(end + 1) = cnt3;
-            elseif mean(inferAngle(wRange)) > angleThreshold && ~isempty(ep)
-                break;
-            end
-        end
+        fl = filtfilt(b.low2, a.low2, diffSum);
 
-        if isempty(sp)
-            sp = 1;
-        else
-            sp = fix(median(sp)) - winSize/2 + 1;
-        end
 
-        if isempty(ep)
-            ep = length(inferAngle);
-        else
-            ep = fix(median(ep));
-        end
+        % For test
+        filter = (inferAngle < angleThreshold) & (fl < 1);
+        sp = find(filter(1:x-1));
+        sp = sp(end);
+
+        ep = find(filter(x+1:end));
+        ep = x + ep(1);
         
         lst = [sp, x, ep];
 
-        subplot(nRow, nCol, nCol*4 + idx)
+        subplot(nRow, nCol, nCol*5 + idx)
         hold on
         plot(diff)
         stem(lst, diff(lst))
@@ -239,14 +260,27 @@ for cnt = 1:length(showTrials)
         probs = exp(scores) ./ sum(exp(scores),2);
         pLabel = func_predict({accName}, preds, probs, mdl.ClassNames, chargingAcc);
 
-        title([preds{1}, pLabel])
+        title([preds{1}, '-->', char(pLabel)])
         
-        subplot(nRow, nCol, nCol*5 + idx)
+        subplot(nRow, nCol, nCol*6 + idx)
         hold on
         plot(inferAngle)
         stem(lst, inferAngle(lst))
         title('Angle inferMag1s & mag')
+
+        subplot(nRow, nCol, nCol*7 + idx)
+        hold on
+        plot(diffSum)
+        stem(lst, diffSum(lst))
+        title('diffsum')
         
+        
+        subplot(nRow, nCol, nCol*8 + idx)
+        hold on
+        plot(fl)
+        stem(lst, fl(lst))
+        title('diffsum LPF')
+
         range = range(1) - 1 + (sp:ep);
 
         if isempty(range)
@@ -264,12 +298,14 @@ for cnt = 1:length(showTrials)
         probs = exp(scores) ./ sum(exp(scores),2);
         
         pLabel = func_predict({accName}, preds, probs, mdl.ClassNames, chargingAcc);
+        
+        [midx, distance] = knnsearch(featureMatrix.data, f, 'K', 11, 'Distance', 'euclidean');
 
         
-        subplot(nRow, nCol, nCol*6 + idx)
+        subplot(nRow, nCol, nCol*9 + idx)
         hold on
         plot(resultDiff)
-        title([preds{1}, pLabel])
+        title([preds{1}, '-->', char(pLabel), ', ',num2str(mean(distance))])
 
         disp([accName, num2str(cnt2), '->', num2str(f(1)), ',',  num2str(f(2)), ',',  num2str(f(3))])
     end

@@ -1,6 +1,6 @@
 clear exp;
 
-accId = 4;
+accId = 3;
 showTrials = 1:2;
 
 wSize = 100;
@@ -20,8 +20,8 @@ feature = objectFeature(accId).feature
 [b.low2, a.low2] = butter(4, 10/rate * 2, 'low');
 
 mdlPath = '../MatlabCode/models/';
-mdl = load([mdlPath, 'jaeminlinearSVM', '.mat']);
-% mdl = load([mdlPath, 'rotMdl', '.mat']);
+% mdl = load([mdlPath, 'jaeminlinearSVM', '.mat']);
+mdl = load([mdlPath, 'rotMdl', '.mat']);
 mdl = mdl.mdl;
 
 featureMatrix.data = mdl.X;
@@ -80,7 +80,7 @@ for cnt = 1:length(showTrials)
 
         [~, diff1s]= func_get_diff((rawSample-bias)*calm, gyro, calRange);
 
-        diffSum = sum(diff1s.^2, 2);
+        diffSum = sqrt(sum(diff1s.^2, 2));
 
         % Magnetometer Calibration
         calRange = calRange(diffSum < 5);
@@ -88,7 +88,7 @@ for cnt = 1:length(showTrials)
         
         [diffOriginal, diff1s]= func_get_diff((rawSample-bias)*calm, gyro, range);
 
-        diffSum = sum(diff1s.^2, 2);
+        diffSum = sqrt(sum(diff1s.^2, 2));
 
         % LPF, HPF
         fh = filtfilt(b.high, a.high, diffSum);
@@ -210,46 +210,26 @@ for cnt = 1:length(showTrials)
             end
         end
 
-        % angleThreshold = mean(inferAngle((x+start):(length(inferAngle))));
-
-        % for cnt3 = (x+start):(length(inferAngle)-1-winSize)
-        %     wRange = cnt3:cnt3+winSize-1;
-        % 
-        %     if mean(inferAngle(wRange)) < angleThreshold
-        %         ep(end + 1) = cnt3;
-        %     elseif mean(inferAngle(wRange)) > angleThreshold && ~isempty(ep)
-        %         break;
-        %     end
-        % end
-
-        % if isempty(sp)
-        %     sp = 1;
-        % else
-        %     sp = fix(median(sp));
-        % end
-        % 
-        % if isempty(ep)
-        %     ep = length(inferAngle);
-        % else
-        %     ep = fix(median(ep));
-        % end
-
         
         [~, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
-        diffSum = sum(diff1s.^2, 2);
+        diffSum = sqrt(sum(diff1s.^2, 2));
 
         fl = filtfilt(b.low2, a.low2, diffSum);
 
-
-        % For test
+        % Find range for feature extraction
         filter = (inferAngle < angleThreshold) & (fl < 1);
-        sp = find(filter(1:x-1));
-        sp = sp(end);
+        front = find(filter(1:x-1));
+        
+        % wRange = front(end)
+
+        sp = front(end);
+                      
 
         ep = find(filter(x+1:end));
         ep = x + ep(1);
-        
+
         lst = [sp, x, ep];
+
 
         subplot(nRow, nCol, nCol*5 + idx)
         hold on
@@ -300,7 +280,7 @@ for cnt = 1:length(showTrials)
         pLabel = func_predict({accName}, preds, probs, mdl.ClassNames, chargingAcc);
         
         [midx, distance] = knnsearch(featureMatrix.data, f, 'K', 11, 'Distance', 'euclidean');
-
+        
         
         subplot(nRow, nCol, nCol*9 + idx)
         hold on
@@ -311,6 +291,7 @@ for cnt = 1:length(showTrials)
     end
 end
 %% Function for get Diff graphs
+
 
 function [diff, diff1s] = func_get_diff(mag, gyro, range)
 

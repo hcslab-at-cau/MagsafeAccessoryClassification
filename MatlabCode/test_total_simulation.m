@@ -1,9 +1,12 @@
 clear exp
-accId = 1;
-trialId = 2;
+accId = 3;
+trialId = 1;
 wSize = 100;
 rate = 100;
 order = 4;
+
+[b.low, a.low] = butter(4, 5/rate * 2, 'low');
+[b.high, a.high] = butter(4, 10/rate * 2, 'high');
 
 distanceThreshold = 20;
 tmp = data(accId).trial(trialId);
@@ -15,7 +18,7 @@ gyro = tmp.gyro;
 acc = tmp.acc;
 click = tmp.detect.sample;
 
-mdlPath = 'C:\Users\Jaemin\git\MagsafeAccessoryClassification\MatlabCode\models\';
+mdlPath = '../MatlabCode/models/';
 
 % mdl = load([mdlPath, 'jaeminrbfSVM', '.mat']);
 mdl = load('rotMdl.mat');
@@ -35,6 +38,7 @@ chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2',...
 
 if exist('charging', 'var')% Not a charging status
     % chargingAcc = {charging.name};
+
     idx = find(ismember(chargingAcc, accName), 1);
     if ~isempty(idx)
         chargingTime = charging(idx).trial(trialId).charging.sample;
@@ -60,23 +64,21 @@ totalextractStart = [];
 tic
 interval = 100;
 start = 100;
-extractInterval = (-wSize:100);
-calbrationInterval = (-5*wSize:-wSize);
+extractInterval = (-wSize*2:wSize);
+calbrationInterval = (-6*wSize:-wSize);
 
 % Initially calibrated raw magnetometer
 rawUse = false;
 
-if rawUse
-    [calm, bias, expmfs] = magcal(rmag.rawSample(1:length(calibrationInterval), :));
-    rmag.sample = (rmag.rawSample-bias)*calm;
-    mag = rmag;
-end
+% [calm, bias, expmfs] = magcal(rmag.rawSample(1:length(calibrationInterval), :));
 
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 mag.dAngle = zeros(length(mag.sample), 1);
 mag.inferAngle = zeros(length(mag.sample), 1);
+mag.diffSum = zeros(length(mag.sample), 1);
 
 lResult = min([length(gyro.sample), length(mag.sample)]);
+calibrationThreshold = 2;
 
 for t = 2:start
     mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
@@ -85,6 +87,8 @@ for t = 2:start
     inferredMag = (rotm\(mag.sample(t-1, :))')';
     
     mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
+    diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
+    mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
 end
 
 for t = 1 + start:lResult
@@ -94,6 +98,8 @@ for t = 1 + start:lResult
     inferredMag = (rotm\(mag.sample(t-1, :))')';
     
     mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
+    diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
+    mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
 
     if mod(t, 5) ~= 0
         continue;
@@ -140,9 +146,11 @@ for t = 1 + start:lResult
         if calibrationRange(1) < 1
             calibrationRange = 1:calibrationRange(end);
         end
+        calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
 
         [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
-        [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
+        % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
+        [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange);
         
         if accessoryStatus == false
             [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
@@ -211,7 +219,7 @@ fig = figure(1);
 % fig.Position(1:2) = [0, 200];
 clf
 
-nRow = 1;
+nRow = 2;
 nCol = 1;
 
 colors = rand(5, 3);
@@ -234,14 +242,21 @@ stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'filled')
 stem(totalDecisionPoints, mag.diff(totalDecisionPoints, 2), 'LineStyle','none', 'Marker','<')
 stem(totalfpPoints, mag.diff(totalfpPoints, 2), 'filled')
 stem(click, mag.diff(click, 2), 'filled')
-
+legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click'})
 
 if exist('chargingTime', 'var')
-    stem(chargingTime, mag.diff(chargingTime, 2), 'filled')
-    legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click','charging'})
+    % stem(chargingTime, mag.diff(chargingTime, 2), 'filled')
+    % legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click','charging'})
 else
-    legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click'})
+    % legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click'})
 end
+
+[b.high, a.high] = butter(4, 10/rate * 2, 'high');
+fh = filtfilt(b.high, a.high, mag.diffSum);
+
+subplot(nRow, nCol, 2)
+hold on
+plot(fh)
 
 return;
 %% Plot reference points
@@ -300,31 +315,138 @@ clearvars chargingTime
 
 return;
 %%
-ref = 1352;
-range = ref + (-100:200);
-calRange = ref + calbrationInterval;
 
-[calm, bias, ~] = magcal(rmag.rawSample(calRange, :));
+nRow = 5;
+nCol = 1;
+rawSample = rmag.rawSample;
+calibrationInterval = -6*wSize:-wSize;
 
-sample = (rmag.rawSample(range, :)-bias)*calm;
+t = 2996;
+range = t + (-100*2:100);
+fig = figure(t);
+clf
+
+if range(1) < 2
+    range = 2:range(end);
+end
+
+if range(end) > length(mag.sample)
+    range = range(1):length(mag.sample);
+end
+
+% Extract range for calibration
+calRange = t + calibrationInterval;
+
+if calRange(1) < 1
+    calRange = 1:calRange(end);
+end
+
+if calRange(end) > length(mag.sample)
+    calRange = calRange(1):length(mag.sample);
+end
+
+% Calibration magnetometer
+[calm, bias, ~] = magcal(rawSample(calRange, :));
+
+[~, diff1s]= func_get_diff(mag.sample, gyro, calRange);
+
+diffSum = sqrt(sum(diff1s.^2, 2));
+
+% Magnetometer Calibration filtering
+calRange = calRange(diffSum < calibrationThreshold);
+[calm, bias, ~] = magcal(rawSample(calRange, :));
+
+[diffOriginal, diff1s]= func_get_diff((rawSample-bias)*calm, gyro, range);
+
+diffSum = sqrt(sum(diff1s.^2, 2));
+
+% LPF, HPF
+fh = filtfilt(b.high, a.high, diffSum);
+fl = filtfilt(b.low, a.low, diffSum);
+
+% LPF derivative
+hpfMaxIdx = find(max(fh) == fh);
+tmp = fl((hpfMaxIdx-20):(hpfMaxIdx+20));
+lpfMaxIdx = hpfMaxIdx - 20 -1 + find((max(tmp) == tmp));
+
+% Detect로 간주
+hpfMaxIdxGlobal = range(1) + hpfMaxIdx -1;
+
+% Calculated diff filtered by hpf, lpf
+hpfMaxIdxLocal = hpfMaxIdxGlobal - range(1)+ 1;
+
+[diff, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
+
+[~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range);
+range = extractedRange - range(1) + 1;
+
+lst = [range(1), hpfMaxIdxLocal, range(end)];
+% Plotting
+subplot(nRow, nCol, 1)
+hold on
+plot(diffOriginal)
+stem(lst, diffOriginal(lst), 'filled')
+title([num2str(t), '-', num2str(length(calRange))])
+
+subplot(nRow, nCol, nCol + 1)
+hold on
+plot(diffSum)
+title('diff sum')
+
+subplot(nRow, nCol, nCol*2 + 1)
+hold on
+plot(fh)
+stem(lst, fh(lst), 'filled')
+title(['HPF ', num2str(highCutoff), 'Hz'])
+
+subplot(nRow, nCol, nCol*3 + 1)
+hold on
+plot(fl)
+stem(lst, fl(lst), 'filled')
+title(['LPF ', num2str(lowCutoff), 'Hz'])
+
+[featureValue, ~] = func_get_diff((rawSample    -bias)*calm, gyro, extractedRange);
+    
+if mod(cnt2, 2) == 1
+    f = featureValue(end, :);
+else
+    f = -featureValue(end, :);
+end
+
+[preds, scores] = predict(mdl, f);
+probs = exp(scores) ./ sum(exp(scores),2);
+
+pLabel = func_predict({accName}, preds, probs, mdl.ClassNames, chargingAcc);
+
+[midx, distance] = knnsearch(featureMatrix.data, f, 'K', 11, 'Distance', 'euclidean');
+
+subplot(nRow, nCol, nCol*4 + 1)
+hold on
+plot(featureValue)
+title([preds{1}, '-->', char(pLabel), ', ',num2str(mean(distance))])
+
+f
+
+% disp([accName, num2str(cnt2), '->', num2str(f(1)), ',',  num2str(f(2)), ',',  num2str(f(3))])
+
+%%
+function [diff, diff1s] = func_get_diff(mag, gyro, range)
+
 diff = zeros(length(range), 3);
-refMag = sample(1, :);
+diff1s = zeros(length(range), 3);
 
-diff(1, :) = sample(1, :) - refMag; 
+refMag = mag(range(1), :);
 
-for cnt2 = 2:length(range)
-    euler = gyro.sample(range(cnt2), :) * 1/100;
+for cnt = 2:length(range)
+    t = range(cnt);
+
+    euler = gyro.sample(t, :) * 1/100;
     rotm = eul2rotm(euler, 'XYZ');
 
     refMag = (rotm\(refMag)')';
-
-    diff(cnt2, :) = sample(cnt2, :) - refMag; 
+    diff(cnt, :) = mag(t, :) - refMag;
+    diff1s(cnt, :) = mag(t, :) - (rotm\(mag(t-1, :))')';
 end
 
-
-figure(3)
-clf
-
-plot(diff)
-legend({'x', 'y', 'z'})
+end
 

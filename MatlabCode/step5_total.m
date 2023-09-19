@@ -8,14 +8,15 @@ end
 % run('step4_classification.m')
 
 distanceThreshold = 20;
+calibrationThreshold = 2;
 interval = 100;
 start = 100;
 wSize = 100;
-extractInterval = (-wSize:wSize);
+extractInterval = (-wSize*2:wSize);
 
 attachInterval = (-wSize*2:wSize);
 detachInterval = (-wSize:2*wSize);
-calbrationInterval = (-4*wSize:-wSize);
+calbrationInterval = (-6*wSize:-wSize);
 
 chargingLatency = 200;
 startPoint = -1; % start points where accessory was initially detected
@@ -26,6 +27,8 @@ mdlDir = 'jaemin9';
 mdlPath = '../MatlabCode/models/';
 kernelName = 'rbfSVM';
 
+
+% mdl = load([mdlPath, 'jaeminrbfSVM', '.mat']);
 mdl = load('rotMdl.mat');
 mdl = mdl.mdl;
 
@@ -37,7 +40,6 @@ featureMatrix.label = mdl.Y;
 rate = 100;
 order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
-% totalAcc = {data.name};   
 totalAcc = mdl.ClassNames;
 totalAcc{end + 1} = 'undefined';
 
@@ -57,7 +59,7 @@ for cnt = 1:length(data)
         acc = tmp.acc;
         gyro = tmp.gyro;
 
-        accessoryStatus = false; % Detach : false, Attach : true
+        accessoryStatus = false; % Detach : false, Attach : truez
         refPoint = -1; % reference point : detection points that has maximum value of magnitude
         curPoints = []; 
         prevPoints = [];
@@ -65,7 +67,8 @@ for cnt = 1:length(data)
         distanceCnt = 0; % Count for distance filter 
 
         mag.dAngle = zeros(length(mag.sample), 1);
-        mag.inferAngle = zeros(length(mag.sample), 1); 
+        mag.inferAngle = zeros(length(mag.sample), 1);
+        mag.diffSum = zeros(length(mag.sample), 1);
 
         lResult = min([length(gyro.sample), length(mag.sample)]);
         
@@ -76,6 +79,9 @@ for cnt = 1:length(data)
             inferredMag = (rotm\(mag.sample(t-1, :))')';
             
             mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
+            diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
+            mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
+            
         end
 
         for t = 1 + start:lResult
@@ -85,6 +91,8 @@ for cnt = 1:length(data)
             inferredMag = (rotm\(mag.sample(t-1, :))')';
             
             mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
+            diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
+            mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
         
             if mod(t, 5) ~= 0
                 continue;
@@ -127,11 +135,14 @@ for cnt = 1:length(data)
                 if calibrationRange(1) < 1
                     calibrationRange = 1:calibrationRange(end);
                 end
+
+                calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
                 
                 % Calibrate magnetometer
                 [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
 
-                [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
+                % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
+                [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange);
 
                 % knnsearch for remove false-positive
                 if accessoryStatus == false

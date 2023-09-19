@@ -26,8 +26,13 @@ for cnt = 1:length(results)
         else
             trueDetection = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
         end
+
+        if length(result) > 1
+            detected = cell2mat({result.detect});
+        else
+            detected = [];
+        end
         
-        detected = cell2mat({result.detect});
         count = 1;
 
         for cnt3 = 1:length(trueDetection)
@@ -66,14 +71,25 @@ for cnt = 1:length(results)
         end
 
         % Detection accuracy
-        attachNumber = length(find(~ismember({tmp(cnt2).trial.pLabel}, 'detach')));
+        
+        if isfield(result, 'detect')
+            attachNumber = length(find(~ismember({tmp(cnt2).trial.pLabel}, 'detach')));
+            totalNumber = length(tmp(cnt2).trial);
+
+            predictedLabels = {tmp(cnt2).trial.pLabel};
+        else
+            attachNumber = 0;
+            totalNumber = 0;
+            predictedLabels = {};
+        end
+       
         tmp(cnt2).attachCount = attachNumber;
-        tmp(cnt2).detachCount = length(tmp(cnt2).trial) - attachNumber;
+        tmp(cnt2).detachCount = totalNumber - attachNumber;
         tmp(cnt2).totalDetectionCount = length(trueDetection);
-        tmp(cnt2).falsePositive = length(result) - length(tmp(cnt2).trial); 
+        tmp(cnt2).falsePositive = length(result) - totalNumber; 
 
         % Classification accuracy
-        predictedLabels = {tmp(cnt2).trial.pLabel};
+        
         predictedLabels(ismember(predictedLabels, 'detach')) = [];
         
         tmp(cnt2).trueLabelCount = length(find(ismember(predictedLabels, statistics(cnt).name)));

@@ -6,9 +6,11 @@ showTrials = 1:2;
 wSize = 100;
 rate = 100;
 calibrationInterval = -6*wSize:-wSize;
-attachInterval = -wSize*2:wSize*2;
+attachInterval = -wSize*2:wSize;
+calibrationThreshold = 10;
 
-lowCutoff = 1.0;
+
+lowCutoff = 5;
 highCutoff = 10;
 
 accName = data(accId).name
@@ -17,7 +19,7 @@ feature = objectFeature(accId).feature
 [b.low, a.low] = butter(4, lowCutoff/rate * 2, 'low');
 [b.high, a.high] = butter(4, highCutoff/rate * 2, 'high');
 
-[b.low2, a.low2] = butter(4, 10/rate * 2, 'low');
+[b.low2, a.low2] = butter(4, 5/rate * 2, 'low');
 
 mdlPath = '../MatlabCode/models/';
 % mdl = load([mdlPath, 'jaeminlinearSVM', '.mat']);
@@ -26,7 +28,6 @@ mdl = mdl.mdl;
 
 featureMatrix.data = mdl.X;
 featureMatrix.label = mdl.Y;
-
 
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
@@ -48,7 +49,7 @@ for cnt = 1:length(showTrials)
 
     iter = 1:2:length(click);
 
-    nRow = 10;
+    nRow = 5;
     nCol = length(iter);
     
     for cnt2 = iter
@@ -82,8 +83,8 @@ for cnt = 1:length(showTrials)
 
         diffSum = sqrt(sum(diff1s.^2, 2));
 
-        % Magnetometer Calibration
-        calRange = calRange(diffSum < 5);
+        % Magnetometer Calibration filtering
+        calRange = calRange(diffSum < calibrationThreshold);
         [calm, bias, ~] = magcal(rawSample(calRange, :));
         
         [diffOriginal, diff1s]= func_get_diff((rawSample-bias)*calm, gyro, range);
@@ -95,63 +96,26 @@ for cnt = 1:length(showTrials)
         fl = filtfilt(b.low, a.low, diffSum);
 
         % LPF derivative
-        fld = fl(2:end) - fl(1:end-1);
-        
         hpfMaxIdx = find(max(fh) == fh);
         tmp = fl((hpfMaxIdx-20):(hpfMaxIdx+20));
         lpfMaxIdx = hpfMaxIdx - 20 -1 + find((max(tmp) == tmp));
-        
-        sp = -1;
-        ep = -1;
-        lpfThreshold = 1;
-
-        for cnt3 = 5:length(fh)/2
-            if (lpfMaxIdx-cnt3) > 1 && ((fld(lpfMaxIdx-cnt3) * fld(lpfMaxIdx-cnt3-1) < 0)) && sp == -1
-                sp = -cnt3;
-            end
-
-            if (lpfMaxIdx + cnt3) < length(fld) && ((fld(lpfMaxIdx+cnt3) * fld(lpfMaxIdx+cnt3+1) < 0)) && ep == -1
-                ep = cnt3;
-            end
-
-            if (ep ~= -1) && (sp ~=-1)
-                break;
-            end
-        end
 
         % Detect로 간주
         hpfMaxIdxGlobal = range(1) + hpfMaxIdx -1;
 
         % Calculated diff filtered by hpf, lpf
-        range = range(1) + lpfMaxIdx + (sp:ep);
         hpfMaxIdxLocal = hpfMaxIdxGlobal - range(1)+ 1;
-        % hpfMaxIdxLocal = hpfMaxIdx;
 
         [diff, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
-        
-        % diff = zeros(length(range), 3);
-        % diff1s = zeros(length(range), 3);
-        % 
-        inferAngle = zeros(length(range), 1);
-        % sample = (rawSample(range, :) - bias) * calm;
-        % refMag = sample(1, :);
-
-        sample = (rawSample(range, :)-bias)*calm;
-        for cnt3 = 2:length(range)
-            s = range(cnt3);
-            
-            euler = gyro.sample(s, :) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            
-            inferMag = (rotm\(sample(cnt3-1, :))')';
-            inferAngle(cnt3) = subspace(inferMag', sample(cnt3, :)');
-        end
 
         idx = find(iter==cnt2);
 
-        % Plotting
-        lst = [sp, ep] + lpfMaxIdx;
 
+        [~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range);
+        range = extractedRange - range(1) + 1;
+        
+        lst = [range(1), hpfMaxIdxLocal, range(end)];
+        % Plotting
         subplot(nRow, nCol, idx)
         hold on
         plot(diffOriginal)
@@ -162,8 +126,6 @@ for cnt = 1:length(showTrials)
         hold on
         plot(diffSum)
         title('diff sum')
-
-        lst = [hpfMaxIdx];
         
         subplot(nRow, nCol, nCol*2 + idx)
         hold on
@@ -171,107 +133,18 @@ for cnt = 1:length(showTrials)
         stem(lst, fh(lst), 'filled')
         title(['HPF ', num2str(highCutoff), 'Hz'])
         
-        lst = [lpfMaxIdx];
-
         subplot(nRow, nCol, nCol*3 + idx)
         hold on
         plot(fl)
         stem(lst, fl(lst), 'filled')
         title(['LPF ', num2str(lowCutoff), 'Hz'])
         
-        lst = [sp, ep] + lpfMaxIdx;
-        
-        subplot(nRow, nCol, nCol*4 + idx)
-        hold on
-        plot(fld)
-        stem(lst, fld(lst), 'filled')
-        title('filter low derivative')
-
-        % disp([num2str(cnt2), '_', num2str(sp), '_', num2str(ep)])
- 
-        x = hpfMaxIdxLocal;
-        winSize = 1;
-        sp = [];
-        ep = [];
-        minVal = 1000;
-
-        start = 1;
-
-        % angleThreshold = mean(inferAngle(1:(x-start)));
-        angleThreshold = 0.02;
-
-        for cnt3 = (x-start):-1:(1+winSize)
-            wRange = (cnt3-winSize+1):cnt3;
-
-            if mean(inferAngle(wRange)) > angleThreshold && ~isempty(sp)
-                break;
-            elseif mean(inferAngle(wRange)) < angleThreshold
-                sp(end + 1) = cnt3;
-            end
-        end
-
-        
-        [~, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
-        diffSum = sqrt(sum(diff1s.^2, 2));
-
-        fl = filtfilt(b.low2, a.low2, diffSum);
-
-        % Find range for feature extraction
-        filter = (inferAngle < angleThreshold) & (fl < 1);
-        front = find(filter(1:x-1));
-        
-        % wRange = front(end)
-
-        sp = front(end);
-                      
-
-        ep = find(filter(x+1:end));
-        ep = x + ep(1);
-
-        lst = [sp, x, ep];
-
-
-        subplot(nRow, nCol, nCol*5 + idx)
-        hold on
-        plot(diff)
-        stem(lst, diff(lst))
-        % title([num2str(range(1)), '-', num2str(range(end))])    
-        [preds, scores] = predict(mdl, diff(end, :));
-        probs = exp(scores) ./ sum(exp(scores),2);
-        pLabel = func_predict({accName}, preds, probs, mdl.ClassNames, chargingAcc);
-
-        title([preds{1}, '-->', char(pLabel)])
-        
-        subplot(nRow, nCol, nCol*6 + idx)
-        hold on
-        plot(inferAngle)
-        stem(lst, inferAngle(lst))
-        title('Angle inferMag1s & mag')
-
-        subplot(nRow, nCol, nCol*7 + idx)
-        hold on
-        plot(diffSum)
-        stem(lst, diffSum(lst))
-        title('diffsum')
-        
-        
-        subplot(nRow, nCol, nCol*8 + idx)
-        hold on
-        plot(fl)
-        stem(lst, fl(lst))
-        title('diffsum LPF')
-
-        range = range(1) - 1 + (sp:ep);
-
-        if isempty(range)
-            continue
-        end
-
-        [resultDiff, ~] = func_get_diff((rawSample-bias)*calm, gyro, range);
+        [featureValue, ~] = func_get_diff((rawSample-bias)*calm, gyro, extractedRange);
+            
         if mod(cnt2, 2) == 1
-            f = resultDiff(end, :);
+            f = featureValue(end, :);
         else
-            f = -resultDiff(end, :);
+            f = -featureValue(end, :);
         end
 
         [preds, scores] = predict(mdl, f);
@@ -281,18 +154,15 @@ for cnt = 1:length(showTrials)
         
         [midx, distance] = knnsearch(featureMatrix.data, f, 'K', 11, 'Distance', 'euclidean');
         
-        
-        subplot(nRow, nCol, nCol*9 + idx)
+        subplot(nRow, nCol, nCol*4 + idx)
         hold on
-        plot(resultDiff)
+        plot(featureValue)
         title([preds{1}, '-->', char(pLabel), ', ',num2str(mean(distance))])
 
         disp([accName, num2str(cnt2), '->', num2str(f(1)), ',',  num2str(f(2)), ',',  num2str(f(3))])
     end
 end
 %% Function for get Diff graphs
-
-
 function [diff, diff1s] = func_get_diff(mag, gyro, range)
 
 diff = zeros(length(range), 3);

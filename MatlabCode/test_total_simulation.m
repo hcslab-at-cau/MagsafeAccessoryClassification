@@ -150,7 +150,7 @@ for t = 1 + start:lResult
 
         [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
         % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
-        [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange);
+        [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange, refPoint);
         
         if accessoryStatus == false
             [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
@@ -377,7 +377,7 @@ hpfMaxIdxLocal = hpfMaxIdxGlobal - range(1)+ 1;
 
 [diff, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
 
-[~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range);
+[~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range, hpfMaxIdxGlobal);
 range = extractedRange - range(1) + 1;
 
 lst = [range(1), hpfMaxIdxLocal, range(end)];

@@ -142,7 +142,7 @@ for cnt = 1:length(data)
                 [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
 
                 % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
-                [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange);
+                [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange, refPoint);
 
                 % knnsearch for remove false-positive
                 if accessoryStatus == false

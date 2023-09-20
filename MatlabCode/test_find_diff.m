@@ -1,13 +1,13 @@
 clear exp;
 
-accId = 3;
+accId = 1;
 showTrials = 1:2;
 
 wSize = 100;
 rate = 100;
 calibrationInterval = -6*wSize:-wSize;
 attachInterval = -wSize*2:wSize;
-calibrationThreshold = 10;
+calibrationThreshold = 2;
 
 
 lowCutoff = 5;
@@ -30,7 +30,6 @@ featureMatrix.data = mdl.X;
 featureMatrix.label = mdl.Y;
 
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
-
 
 for cnt = 1:length(showTrials)
     cur = data(accId).trial(showTrials(cnt));
@@ -79,7 +78,7 @@ for cnt = 1:length(showTrials)
         % Calibration magnetometer
         [calm, bias, ~] = magcal(rawSample(calRange, :));
 
-        [~, diff1s]= func_get_diff((rawSample-bias)*calm, gyro, calRange);
+        [~, diff1s]= func_get_diff(mag.sample, gyro, calRange);
 
         diffSum = sqrt(sum(diff1s.^2, 2));
 
@@ -87,7 +86,7 @@ for cnt = 1:length(showTrials)
         calRange = calRange(diffSum < calibrationThreshold);
         [calm, bias, ~] = magcal(rawSample(calRange, :));
         
-        [diffOriginal, diff1s]= func_get_diff((rawSample-bias)*calm, gyro, range);
+        [diffOriginal, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
 
         diffSum = sqrt(sum(diff1s.^2, 2));
 
@@ -95,7 +94,6 @@ for cnt = 1:length(showTrials)
         fh = filtfilt(b.high, a.high, diffSum);
         fl = filtfilt(b.low, a.low, diffSum);
 
-        % LPF derivative
         hpfMaxIdx = find(max(fh) == fh);
         tmp = fl((hpfMaxIdx-20):(hpfMaxIdx+20));
         lpfMaxIdx = hpfMaxIdx - 20 -1 + find((max(tmp) == tmp));
@@ -111,7 +109,7 @@ for cnt = 1:length(showTrials)
         idx = find(iter==cnt2);
 
 
-        [~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range);
+        [~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range, hpfMaxIdxGlobal);
         range = extractedRange - range(1) + 1;
         
         lst = [range(1), hpfMaxIdxLocal, range(end)];

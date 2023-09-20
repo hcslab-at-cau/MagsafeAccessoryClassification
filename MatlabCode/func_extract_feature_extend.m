@@ -1,10 +1,10 @@
-function [diff, extractedRange] = func_extract_feature_extend(mag, gyro, range)
+function [diff, extractedRange] = func_extract_feature_extend(mag, gyro, range, refPoint)
 % Input mag is calibrated magnetometer values using magcal
+% RefPoint : Maximum value of Magnetometer HPF
+
 rate = 100;
 
-
 [b.low, a.low] = butter(4, 5/rate * 2, 'low');
-[b.high, a.high] = butter(4, 10/rate * 2, 'high');
 
 diff1s = zeros(length(range), 3);
 
@@ -18,13 +18,9 @@ end
 
 diffSum = sqrt(sum(diff1s.^2, 2));
 
-fh = filtfilt(b.high, a.high, diffSum);
 fl = filtfilt(b.low, a.low, diffSum);
 
-
-hpfMaxIdx = find(max(fh)==fh);
-hpfMaxIdxGlobal = range(1) + hpfMaxIdx - 1;
-x = hpfMaxIdxGlobal - range(1) + 1;
+hpfMaxIdx = refPoint - range(1) + 1;
 
 if hpfMaxIdx -20 < 1
     startPoint = 1;
@@ -40,10 +36,11 @@ end
 
 tmp = fl(startPoint:endPoint);
 
+
 lpfMaxIdx = hpfMaxIdx - 20 -1 + find((max(tmp) == tmp));
 
 filter = fl < 1.0;
-front = find(filter(1:x-1));
+front = find(filter(1:hpfMaxIdx-1));
 
 sp = length(front);
 interval = (-20:-1);
@@ -72,12 +69,12 @@ interval = (-20:-1);
 
 sp = front(sp);
 
-ep = find(filter(x+1:end));
+ep = find(filter(hpfMaxIdx+1:end));
 
 if isempty(ep)
     ep = [0];
 end
-ep = x + ep(1);
+ep = hpfMaxIdx + ep(1);
 
 
 extractedRange = range(1) - 1 + (sp:ep);

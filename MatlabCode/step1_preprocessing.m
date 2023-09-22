@@ -21,7 +21,7 @@ calibrationRange = (1:300); % For raw magnetometer calibration
 % Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');
 
-for cnt = 1:length(data)
+parfor cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
     
     for cnt2 = 1:nTrials

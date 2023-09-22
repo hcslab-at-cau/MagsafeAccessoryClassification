@@ -1,11 +1,9 @@
-run('step0_load_data.m')
+% run('step0_load_data.m')
 clear exp
 idx = ismember({data.name}, {'None'});
 if ~isempty(find(idx, 1))
     data = data(~idx);
 end
-
-% run('step4_classification.m')
 
 distanceThreshold = 20;
 calibrationThreshold = 2;
@@ -16,10 +14,10 @@ extractInterval = (-wSize*2:wSize);
 
 attachInterval = (-wSize*2:wSize);
 detachInterval = (-wSize:2*wSize);
-calbrationInterval = (-6*wSize:-wSize);
+calbrationInterval = (-6*wSize:-1*wSize);
 
 chargingLatency = 200;
-startPoint = -1; % start points where accessory was initially detected
+
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
 % Model and training data load
@@ -27,14 +25,12 @@ mdlDir = 'jaemin9';
 mdlPath = '../MatlabCode/models/';
 kernelName = 'rbfSVM';
 
-
 % mdl = load([mdlPath, 'jaeminrbfSVM', '.mat']);
 mdl = load('rotMdl.mat');
 mdl = mdl.mdl;
 
 featureMatrix.data = mdl.X;
 featureMatrix.label = mdl.Y;
-
 
 % High pass filter 
 rate = 100;
@@ -45,10 +41,13 @@ totalAcc{end + 1} = 'undefined';
 
 results = struct();
 tic
-for cnt = 1:length(data)
+
+parfor cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
     accName = data(cnt).name;
     results(cnt).name = accName;
+
+    startPoint = -1; % start points where accessory was initially detected
 
     for cnt2 = 1:nTrials
         tmp = data(cnt).trial(cnt2);

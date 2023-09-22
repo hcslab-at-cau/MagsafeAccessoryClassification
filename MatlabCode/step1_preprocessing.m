@@ -21,7 +21,8 @@ calibrationRange = (1:300); % For raw magnetometer calibration
 % Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');
 
-for cnt = 1:length(data)
+
+parfor cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
     
     for cnt2 = 1:nTrials
@@ -44,12 +45,12 @@ for cnt = 1:length(data)
 
                 case 'rmag'
                     cur.rawSample = cur.sample;
-                    [calibrationMatrix, bias, expmfs] = magcal(cur.sample(calibrationRange, :));
+%                     [calibrationMatrix, bias, expmfs] = magcal(cur.sample(calibrationRange, :));
 
                     cur.dAngle = zeros(length(cur.sample), 1); % Extract the amount of changes in angle
 
                     % Calibrate raw magnetometer value
-                    cur.sample= (cur.sample - bias) * calibrationMatrix; 
+%                     cur.sample= (cur.sample - bias) * calibrationMatrix; 
 
                     for cnt4 = 2:length(cur.sample)
                         cur.dAngle(cnt4) = subspace(cur.sample(cnt4, :)', cur.sample(cnt4 - 1, :)');
@@ -80,19 +81,29 @@ for cnt = 1:length(data)
             diffSum = zeros(lResult, 1);
             inferAngle = zeros(lResult, 1);
             corrData = zeros(2, lResult);
+            q = zeros(lResult, 4);
     
             for t = 2:lResult
-                euler = gyro.sample(t, :) * 1/rate;
-                rotm = eul2rotm(euler, 'XYZ');
-                inferMag(t, :) = (rotm \ (refMag)')';
-                inferMag1s(t, :) = (rotm\(mag.sample(t-1, :))')';
+                theta = (1/rate) * norm(gyro.sample(t, :));
+                v = gyro.sample(t, :) / norm(gyro.sample(t, :)) * sin(theta/2);                
+                tmp = quaternion(cos(theta/2), v(1), v(2), v(3));
+                q(t, :) = tmp.compact;
                 
+                inferMag1s(t, :) = quatrotate(q(t, :), mag.sample(t-1, :));
+                
+                if t > 2
+                    tmp = prevq * tmp;
+                end
+                prevq = tmp;
+                    
+                inferMag(t, :) = quatrotate(prevq.compact, refMag);
+                
+                                
                 % infer Angle --> angle between inferred mag and real mag
                 % inferred mag --> using prev 0.01s mag and gyroscope.
-                inferAngle(t) = subspace(inferMag1s(t, :)', mag.sample(t, :)');
-                refMag = inferMag(t, :);
+                inferAngle(t) = subspace(inferMag1s(t, :)', mag.sample(t, :)');                
     
-                diff(t, :) = mag.sample(t, :) - inferMag(t, :);
+                diff(t, :) = mag.sample(t, :) - inferMag1s(t, :);
                 diffSum(t) = sqrt(sum(power(diff(t, :), 2)));
             end
             interval = 5;
@@ -108,6 +119,8 @@ for cnt = 1:length(data)
             mag.diffSum = diffSum;
             mag.corrData = corrData;
             mag.inferMag = inferMag;
+            mag.inferMag1s = inferMag1s
+            mag.q = q;
             
             data(cnt).trial(cnt2).(char(magType(i))) = mag;
         end

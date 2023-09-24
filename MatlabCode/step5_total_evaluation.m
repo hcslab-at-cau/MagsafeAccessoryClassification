@@ -27,7 +27,7 @@ for cnt = 1:length(results)
             trueDetection = rmmissing(groundTruth.([accName, '_', num2str(cnt2)]));
         end
 
-        if length(result) > 1
+        if isfield(result, 'detect')
             detected = cell2mat({result.detect});
         else
             detected = [];
@@ -71,8 +71,7 @@ for cnt = 1:length(results)
         end
 
         % Detection accuracy
-        
-        if isfield(result, 'detect')
+        if isfield(tmp, 'trial')
             attachNumber = length(find(~ismember({tmp(cnt2).trial.pLabel}, 'detach')));
             totalNumber = length(tmp(cnt2).trial);
 
@@ -105,8 +104,13 @@ for cnt = 1:length(results)
     statistics(cnt).attachAccuracy = sum(cell2mat({tmp.attachCount}))/sum(cell2mat({tmp.totalDetectionCount})/2) * 100;
     statistics(cnt).detachAccuracy = sum(cell2mat({tmp.detachCount}))/sum(cell2mat({tmp.totalDetectionCount})/2) * 100;
     statistics(cnt).falsePositive = sum(cell2mat({tmp.falsePositive}));
-
-    statistics(cnt).classificationAccuracy = sum(cell2mat({tmp.trueLabelCount}))/sum(cell2mat({tmp.totalLabelCount})) * 100;
+    
+    if sum(cell2mat({tmp.totalLabelCount})) == 0
+        statistics(cnt).classificationAccuracy = 0;
+    else
+        statistics(cnt).classificationAccuracy = sum(cell2mat({tmp.trueLabelCount}))/sum(cell2mat({tmp.totalLabelCount})) * 100;
+    end
+    
 end
 
 %% Show Detection accuracy
@@ -186,7 +190,6 @@ cm.RowSummary = 'row-normalized';
 title('confusion matrix');
 
 return;
-
 %% Evaluation feature extraction using ground-truth
 classificationResult = struct();
 
@@ -230,4 +233,3 @@ for cnt = 1:length(data)
     end
     classificationResult(cnt).result= cur;
 end
-

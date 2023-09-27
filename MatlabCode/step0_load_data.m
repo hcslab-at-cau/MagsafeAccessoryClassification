@@ -1,37 +1,19 @@
 clear;
 
-newApp = true;
-path = '../Data/';
-% datasetName = 'Mobility_dataset';
-datasetName = 'Inside_dataset';
-folderName = 'Jaemin3';
+params = struct();
+params.data.newApp = true;
+params.data.path = '../Data/Inside_dataset/Jaemin6';
+params.data.postfix = {'310'};
 
-path = [path, datasetName, '/', folderName];
+data = func_load_data(params.data.path, params.data.postfix);
 
-% c = {'Normal_objects', 'Holders'};
-c = {'310Hall2'};
-postfix = char(c);
-
-if newApp == false
-    % Phyphox version
-    data = func_load_data(path, postfix);
-else
-    % New app version
-    data = func_load_new_data(path, postfix);
-    charging = func_load_charging_status(path, postfix);
+if params.data.newApp == true
+    charging = func_load_charging_status(params.data.path, params.data.postfix);
 end
 
-% idx = ismember({data.name}, {'None'});
-% if ~isempty(find(idx, 1))
-%     data = data(~idx);
-% end
-
-
-objectFeature = struct();
-objects = {'batterypack1', 'griptok1', 'griptok2', 'charger1', 'charger2', 'wallet1',...
+params.objects.name = {'batterypack1', 'griptok1', 'griptok2', 'charger1', 'charger2', 'wallet1',...
     'wallet2', 'wallet3', 'wallet4', 'holder2', 'holder3', 'holder4'};
-
-objectValue = [
+params.objects.value = [
     -30, 77, -13;
     -56, 108, -115;
     -20, 44, 11;
@@ -46,17 +28,20 @@ objectValue = [
     -18, 75, 10
 ];
 
+
+
+
 for cnt = 1:length(objects)
-    objectFeature(cnt).name = char(objects(cnt));
-    objectFeature(cnt).feature = objectValue(cnt, :);
+    objectFeature(cnt).name = char(params.objects.name(cnt));
+    objectFeature(cnt).feature = params.objects.value(cnt, :);
 end
 
 accNames= {data.name};
 objNames = {objectFeature.name};
 
-objectFeature(~ismember(objNames, accNames)) = [];
+objectFeature(~ismember(objectFeature.name, data.name)) = [];
 
-run('step1_preprocessing.m')
-run('step2_detection.m')
+% run('step1_preprocessing.m')
+% run('step2_detection.m')
 % run('step2_detection_evaluation.m')
 % run('step3_feature_extraction_ground_truth.m')    

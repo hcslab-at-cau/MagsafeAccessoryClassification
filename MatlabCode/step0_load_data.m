@@ -2,8 +2,8 @@ clear;
 
 params = struct();
 params.data.newApp = true;
-params.data.path = '../Data/Inside_dataset/Jaemin6';
-params.data.postfix = {'310'};
+params.data.path = '../Data/Inside_dataset/Jaemin7';
+params.data.postfix = char({'310'});
 
 data = func_load_data(params.data.path, params.data.postfix);
 
@@ -29,9 +29,7 @@ params.objects.value = [
 ];
 
 
-
-
-for cnt = 1:length(objects)
+for cnt = 1:length(params.objects)
     objectFeature(cnt).name = char(params.objects.name(cnt));
     objectFeature(cnt).feature = params.objects.value(cnt, :);
 end

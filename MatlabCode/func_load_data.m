@@ -1,4 +1,4 @@
-function result = load_data(root,postfix)
+function result = func_load_data(root,postfix)
 
 % Sensor list
 sensors = {'acc', 'gyro', 'mag'};
@@ -30,6 +30,8 @@ for cnt = 1:size(postfix, 1)
     
             for cnt4 = 1:nSensors
                 tmp = csvread([files(idx + cnt4).folder, '/', files(idx + cnt4).name], 1, 0);
+                
+                [cnt2, cnt3, cnt4, size(tmp)]
                 
                 data(cnt2).trial(cnt3).(char(sensors(cnt4))).time = tmp(:, 1);
                 data(cnt2).trial(cnt3).(char(sensors(cnt4))).sample = tmp(:, 2:4);            

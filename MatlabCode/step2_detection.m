@@ -1,91 +1,111 @@
 detected = struct();
 
-wSize = 1 * rate;
+params.detect.magTh = 5;
+params.detect.cfarTh = .999999;
+params.detect.angTh = .01;
 
-magThreshold = 1;
-cfarThreshold = .9999;
+params.detect.initRange = params.pre.cRange;
+params.detect.cfarWinSize = params.data.rate * 1;
+
+params.detect.accMargin = 5;
+
 corrThreshold = .5;
-dAngleThreshold = .01;
 
-for cnt = 1:length(data)
-    nTrials = length(data(cnt).trial);
-
-    for cnt2 = 1:nTrials
-        mag = data(cnt).trial(cnt2).mag;
+parfor cnt = 1:length(data) 
+    for cnt2 = 1:length(data(cnt).trial)
+        mag = data(cnt).trial(cnt2).rmag;
         acc = data(cnt).trial(cnt2).acc;
         gyro = data(cnt).trial(cnt2).gyro;
-        corrData = mag.corrData;
 
-        lResult = min([length(mag.magnitude), length(acc.magnitude), ...
+        range = 1:min([length(mag.magnitude), length(acc.magnitude), ...
             length(mag.dAngle), length(gyro.dAngle)]);
 
         cur = struct();
-        % Filter 1 : the magnitude of mag should be large5 enough
-        cur.filter1 = mag.magnitude(1:lResult) > magThreshold;
-        cur.filter1(1:wSize) = false;
-
-        % Filter 2 : the delta angle measured from mag should be large enough
-        cur.filter2 = cur.filter1 ...
-            & mag.dAngle(1:lResult) > dAngleThreshold;
+        % Filter 1 : the magnitude of mag should be large  enough
+        cur.filter.mag = mag.magnitude(range) > params.detect.magTh;
+               
+        % Filter 2 : the delta angle measured from mag should be large enough               
+        cur.filter.ang = mag.dAngle(range) > params.detect.angTh;
         
         % Filter 3 : There should be sudden variation in the magnitude of mag
-        cur.filter3 = cur.filter2;
-        for cnt3 = find(cur.filter3)'
-            range = cnt3 + (-wSize:-1);
-            cur.filter3(cnt3) = func_CFAR(mag.magnitude(range), ...
-                mag.magnitude(cnt3), cfarThreshold);
+        cur.filter.mCFAR = zeros(size(cur.filter.mag));
+        for cnt3 = params.detect.cfarWinSize + 1:range(end)
+            cur.filter.mCFAR(cnt3) = func_CFAR(mag.magnitude(cnt3 + (-params.detect.cfarWinSize:-1)), ...
+                mag.magnitude(cnt3), params.detect.cfarTh);     
         end
         
         % Filter 4 : There should be sudden variation in the magnitude of acc
-        cur.filter4 = cur.filter3;
-        for cnt3 = find(cur.filter4)'
-            wrange = cnt3 + (-5:0);
-            cur.filter4(cnt3) = 0;
-
-            for cnt4 = wrange
-                range = cnt4 + (-wSize:-1);
-
-                if range(1) < 1
-                    range = 1:range(end);
-                end
-
-                if(func_CFAR(acc.magnitude(range), acc.magnitude(cnt4), cfarThreshold))
-                    cur.filter4(cnt3) = 1;
-                    break;
-                end
-            end
-            
-            
-            % cur.filter4(cnt3) = func_CFAR(acc.magnitude(range), ...
-            %     acc.magnitude(cnt3), cfarThreshold);
+        cur.filter.aCFAR = zeros(size(cur.filter.mag));
+        for cnt3 = params.detect.cfarWinSize + 1:range(end)
+            cur.filter.aCFAR(cnt3) = func_CFAR(acc.magnitude(cnt3 + (-params.detect.cfarWinSize:-1)), ...
+                acc.magnitude(cnt3), params.detect.cfarTh);     
         end
-
-        % Filter 5 : the delta angles measured from mag and gyro should be
-        % different to each other
-        cur.filter5 = cur.filter4;
-        %cur.filter6 = cur.filter4;
-        for cnt3 = find(cur.filter5)'
-            % range = cnt3 + 1 + (-wSize:-1);
-            
-            cur.filter5(cnt3) = corrData(1, cnt3) > 0.9;
-            %cur.filter6(cnt3) = corrData(2, cnt3) > 0.5;
-            % range = cnt3-10 + 1:cnt3+10;
-            % cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) > corrThreshold;
-        end
-
-        % Filter 6 : 0.5s 내 1개.
-        cur.filter6 = cur.filter5;
-        for cnt3 = find(cur.filter6)'
-            range = cnt3 + (-wSize:-1);
-            
-            if max(cur.filter6(range)) == 1
-                cur.filter6(cnt3) = 0;
-            end
-        end
-
+        
         detected(cnt).trial(cnt2) = cur;
     end
 end
+        
+%         for cnt3 = params.detect.accMargin + 1:range(end)
+%             cur.filter.aCFAR = logical(movsum(cur.filter.aCFAR, params.detect.accMargin));
+%         end
+%         
+        
+%         cur.filter4 = cur.filter3;
+%         for cnt3 = find(cur.filter4)'
+%             wrange = cnt3 + (-5:0);
+%             cur.filter4(cnt3) = 0;
+% 
+%             for cnt4 = wrange
+%                 range = cnt4 + (-wSize:-1);
+% 
+%                 if range(1) < 1
+%                     range = 1:range(end);
+%                 end
+% 
+%                 if(func_CFAR(acc.magnitude(range), acc.magnitude(cnt4), cfarThreshold))
+%                     cur.filter4(cnt3) = 1;
+%                     break;
+%                 end
+%             end
+%             
+%             
+%             % cur.filter4(cnt3) = func_CFAR(acc.magnitude(range), ...
+%             %     acc.magnitude(cnt3), cfarThreshold);
+%         end
+% 
+%         % Filter 5 : the delta angles measured from mag and gyro should be
+%         % different to each other
+%         cur.filter5 = cur.filter4;
+%         %cur.filter6 = cur.filter4;
+% %         for cnt3 = find(cur.filter5)'
+% %             % range = cnt3 + 1 + (-wSize:-1);
+% %             
+% %             cur.filter5(cnt3) = corrData(1, cnt3) > 0.9;
+% %             %cur.filter6(cnt3) = corrData(2, cnt3) > 0.5;
+% %             % range = cnt3-10 + 1:cnt3+10;
+% %             % cur.filter5(cnt3) = corr(mag.dAngle(range), gyro.dAngle(range)) > corrThreshold;
+% %         end
+% 
+%         % Filter 6 : 0.5s 내 1개.
+%         cur.filter6 = cur.filter5;
+%         for cnt3 = find(cur.filter6)'
+%             range = cnt3 + (-wSize:-1);
+%             
+%             if max(cur.filter6(range)) == 1
+%                 cur.filter6(cnt3) = 0;
+%             end
+%         end
+% 
+%         detected(cnt).trial(cnt2) = cur;
+%         
+%         figure;
+%         subplot 211
+%         plot(mag.magnitude)
+%         
+%         subplot 212
+%         plot(cur.filter6)
+%     end
+% end
 
 % figure(55)
 % clf

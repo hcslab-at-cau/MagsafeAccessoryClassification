@@ -1,14 +1,23 @@
 clear;
 
+global params;
 params = struct();
 params.data.newApp = true;
 params.data.path = '../Data/Inside_dataset/Jaemin7';
 params.data.postfix = char({'310'});
 
-data = func_load_data(params.data.path, params.data.postfix);
+params.data.sensors = {'gyro', 'acc', 'mag'};
+params.data.rate = 100;
 
-if params.data.newApp == true
+if params.data.newApp == false
+    data = func_load_data(params.data.path, params.data.postfix);
+else
+    params.data.sensors = [params.data.sensors, 'rmag'];
+    data = func_load_new_data(params.data.path, params.data.postfix);
+    data = func_timestamp_sync(data);
+    
     charging = func_load_charging_status(params.data.path, params.data.postfix);
+
 end
 
 params.objects.name = {'batterypack1', 'griptok1', 'griptok2', 'charger1', 'charger2', 'wallet1',...
@@ -29,17 +38,9 @@ params.objects.value = [
 ];
 
 
-for cnt = 1:length(params.objects)
-    objectFeature(cnt).name = char(params.objects.name(cnt));
-    objectFeature(cnt).feature = params.objects.value(cnt, :);
+for cnt = 1:length(params.objects.name)
+    objects(cnt).name = char(params.objects.name(cnt));
+    objects(cnt).feature = params.objects.value(cnt, :);
 end
 
-accNames= {data.name};
-objNames = {objectFeature.name};
-
-objectFeature(~ismember(objectFeature.name, data.name)) = [];
-
-% run('step1_preprocessing.m')
-% run('step2_detection.m')
-% run('step2_detection_evaluation.m')
-% run('step3_feature_extraction_ground_truth.m')    
+objects(~ismember({objects(:).name}, {data.name})) = [];

@@ -1,5 +1,4 @@
-detected = struct();
-
+%% Detect events
 params.detect.magTh = 2;
 params.detect.diffTh = 5;
 
@@ -8,14 +7,16 @@ params.detect.initRange = params.pre.cRange;
 params.detect.margin = params.data.rate * 0.1 * 2 + 1;
 params.detect.minDist = params.data.rate * 1;
 
+result = struct();
+
 tic
-for cnt = 1:length(data) 
+for cnt = 1:length(data)
     for cnt2 = 1:length(data(cnt).trial)
-        mag = data(cnt).trial(cnt2).rmag;
+        mag = feature(cnt).trial(cnt2).detect.rmag;
         range = 1:min([length(mag.magnitude), length(mag.diff)]);
 
         cur = struct();
-        % Filter 1 : the magnitude of mag should be large  enough
+        % Filter 1 : the magnitude of mag should be large enough
         cur.mag = (mag.magnitude(range) > params.detect.magTh) .* mag.magnitude;
         [vals, locs] = findpeaks(cur.mag, 'MinPeakDistance', params.detect.minDist);
 
@@ -26,10 +27,10 @@ for cnt = 1:length(data)
         cur.diff = mag.diff(range, :) > params.detect.diffTh;
 
         cur.all = cur.mag & movsum(cur.diff, params.detect.margin);        
-        detected(cnt).trial(cnt2) = cur;
+        result(cnt).trial(cnt2).detect = cur;
     end
 end
 toc
 
 %%
-func_plot_detected(data, detected, 6, 2);
+func_plot_detected(feature, result, 6, 2);

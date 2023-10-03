@@ -1,10 +1,11 @@
+%% Load sensor data
 clear;
 
 global params;
 params = struct();
 params.data.newApp = true;
 params.data.path = '../Data/Inside_dataset/Jaemin7';
-params.data.postfix = char({'208'});
+params.data.postfix = char({'310'});
 
 params.data.sensors = {'gyro', 'mag'};
 params.data.rate = 100;
@@ -19,6 +20,7 @@ else
     charging = func_load_charging_status(params.data.path, params.data.postfix);
 end
 
+%% Load reference feature data
 params.ref.path = 'features/jaemin3_p2p.mat';
 params.ref.nData = 50;
 params.ref.nSub = 5;
@@ -32,6 +34,7 @@ for cnt = 1:length(ref)
     ref(cnt).raw = ref(cnt).feature;   
     ref(cnt).feature = zeros(params.ref.nSub, 3);
 
+    % Divide references into subsets
     for cnt2 = 1:params.ref.nSub
         range = (cnt2 - 1) * params.ref.nSubData + (1:params.ref.nSubData);
         if params.ref.nSubData > 1

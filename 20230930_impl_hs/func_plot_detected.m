@@ -1,19 +1,20 @@
-function [] = func_plot_detected(data, detected, dId, tId)
-cur = detected(dId).trial(tId);
+function [] = func_plot_detected(data, result, dId, tId)
+data = data(dId).trial(tId).detect.rmag;
+result = result(dId).trial(tId).detect;
 
 clf
 subplot 511
-plot(data(dId).trial(tId).rmag.magnitude)
+plot(data.magnitude)
 
 subplot 512
-plot(data(dId).trial(tId).rmag.diff)
+plot(data.diff)
 
 subplot 513
-plot(cur.mag)
+plot(result.mag)
 
 subplot 514
-plot(cur.diff)
+plot(result.diff)
 
 subplot 515
-plot(cur.all)
+plot(result.all)
 end

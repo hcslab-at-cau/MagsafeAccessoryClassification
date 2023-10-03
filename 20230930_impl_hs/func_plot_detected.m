@@ -1,5 +1,5 @@
 function [] = func_plot_detected(data, detected, dId, tId)
-cur = detected(dId).trial(tId).filter;
+cur = detected(dId).trial(tId);
 
 clf
 subplot 511

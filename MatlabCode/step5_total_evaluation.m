@@ -2,7 +2,7 @@ if ~newApp
     groundTruth = func_load_ground_truth(datasetName, folderName);
     interval = (-100:100);
 else
-    interval = (-200:50);
+    interval = (-200:200);
 end
 % Detection evaluation & Classifcation Accuracy filtered by detection
 statistics = struct();
@@ -10,6 +10,8 @@ statistics = struct();
 % Confusion matrix filtered by detection
 labels.predict = [];
 labels.label = [];
+mdl = load('rotMdl.mat');
+mdl = mdl.mdl;
 totalAcc = mdl.ClassNames;
 
 for cnt = 1:length(results)
@@ -62,6 +64,7 @@ for cnt = 1:length(results)
                     % True : Attach, Predicted : Detach || True : Detach Predicted : Attach
                     continue;                    
                 end
+               
 
                 tmp(cnt2).trial(count).refPoint = detected(idx);
                 tmp(cnt2).trial(count).clickPoint = t;
@@ -70,8 +73,17 @@ for cnt = 1:length(results)
             end
         end
 
+        if count == 1
+            tmp(cnt2).attachNumber = 0;
+            tmp(cnt2).detachNumber = 0;
+            tmp(cnt2).totalDetectionCount = length(trueDetection);
+            tmp(cnt2).falsePositive = 0;
+            tmp(cnt2).trueLabelCount = 0;
+            tmp(cnt2).totalLabelCount = 0;
+        end
+
         % Detection accuracy
-        if isfield(tmp, 'trial')
+        if isfield(tmp, 'trial') && ~isempty(tmp(cnt2).trial)
             attachNumber = length(find(~ismember({tmp(cnt2).trial.pLabel}, 'detach')));
             totalNumber = length(tmp(cnt2).trial);
 
@@ -122,7 +134,7 @@ truePositive(2, :) = cell2mat({statistics.detachAccuracy});
 falsePositive = cell2mat({statistics.falsePositive});
 
 truePositive(1, end+1) = mean(truePositive(1, :));
-truePositive(2, end) = mean(truePositive(2, :));
+truePositive(2, end) = mean(truePositive(2, 1:end-1));
 falsePositive(1, end+1) = sum(falsePositive);
 
 accNames = [accNames, 'mean'];
@@ -151,7 +163,9 @@ title('detach accuracy')
 
 subplot(nRows, nCols, 3);
 bar(falsePositive)
-ylim([0, 40])
+if falsePositive(1, end) >0
+    ylim([0, falsePositive(1, end)])
+end
 grid on;
 xticklabels(accNames);
 title('False postive')

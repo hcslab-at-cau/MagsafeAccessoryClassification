@@ -1,14 +1,13 @@
 clear exp;
 
-accId = 1;
+accId = 8;
 showTrials = 1:2;
 
 wSize = 100;
 rate = 100;
-calibrationInterval = -6*wSize:-wSize;
-attachInterval = -wSize*2:wSize;
+calibrationInterval = -5*wSize:-wSize;
+attachInterval = -wSize:wSize;
 calibrationThreshold = 2;
-
 
 lowCutoff = 5;
 highCutoff = 10;
@@ -39,6 +38,8 @@ for cnt = 1:length(showTrials)
     rawSample = rmag.rawSample;
     click = cur.detect.sample;
 
+    [calm, bias, ~] = magcal(rmag.rawSample(1:500), :);
+
     w = 600; 
     h = 400;
 
@@ -48,12 +49,13 @@ for cnt = 1:length(showTrials)
 
     iter = 1:2:length(click);
 
-    nRow = 5;
+    nRow = 7;
     nCol = length(iter);
     
     for cnt2 = iter
         t = click(cnt2);
 
+        
         % Extract range for feature extraction
         range = t + attachInterval;
         if range(1) < 2
@@ -89,6 +91,7 @@ for cnt = 1:length(showTrials)
         [diffOriginal, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
 
         diffSum = sqrt(sum(diff1s.^2, 2));
+        
 
         % LPF, HPF
         fh = filtfilt(b.high, a.high, diffSum);
@@ -109,10 +112,10 @@ for cnt = 1:length(showTrials)
         idx = find(iter==cnt2);
 
 
-        [~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range, hpfMaxIdxGlobal);
-        range = extractedRange - range(1) + 1;
+        [~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range, hpfMaxIdxGlobal, 1.0);
+        showRange = extractedRange - range(1) + 1;
         
-        lst = [range(1), hpfMaxIdxLocal, range(end)];
+        lst = [showRange(1), hpfMaxIdxLocal, showRange(end)];
         % Plotting
         subplot(nRow, nCol, idx)
         hold on
@@ -156,6 +159,16 @@ for cnt = 1:length(showTrials)
         hold on
         plot(featureValue)
         title([preds{1}, '-->', char(pLabel), ', ',num2str(mean(distance))])
+
+        subplot(nRow, nCol, nCol*5 + idx)
+        hold on
+        plot(rawSample(range, :)-rawSample(range(1), :))
+        title('rawSample range')
+
+        subplot(nRow, nCol, nCol*6 + idx)
+        hold on
+        plot(rawSample(extractedRange, :)-rawSample(extractedRange(1), :))
+        title('rawSample extracted range')
 
         disp([accName, num2str(cnt2), '->', num2str(f(1)), ',',  num2str(f(2)), ',',  num2str(f(3))])
     end

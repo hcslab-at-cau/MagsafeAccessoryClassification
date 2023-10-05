@@ -7,12 +7,14 @@ params.detect.initRange = params.pre.cRange;
 params.detect.margin = params.data.rate * 0.1 * 2 + 1;
 params.detect.minDist = params.data.rate * 1;
 
+params.detect.mType = params.pre.mType;
+
 result = struct();
 
 tic
 for cnt = 1:length(data)
     for cnt2 = 1:length(data(cnt).trial)
-        mag = feature(cnt).trial(cnt2).detect.rmag;
+        mag = feature(cnt).trial(cnt2).detect.(params.detect.mType);
         range = 1:min([length(mag.magnitude), length(mag.diff)]);
 
         cur = struct();
@@ -33,4 +35,4 @@ end
 toc
 
 %%
-func_plot_detected(feature, result, 6, 2);
+% func_plot_detected(feature, result, params.detect.mType, 6, 2);

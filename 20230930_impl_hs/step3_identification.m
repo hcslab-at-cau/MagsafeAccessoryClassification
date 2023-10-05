@@ -18,15 +18,18 @@ for cnt = 1:length(result)
 
         % Perform individual tests for each attach-detach pair
         for cnt3 = 1:size(cur.tTest, 1)
-            range = cur.tTest(cnt3, 1) - params.identify.testMargin: ...
-                cur.tTest(cnt3, 2) + params.identify.testMargin;
+            range = max(1, cur.tTest(cnt3, 1) - params.identify.testMargin): ...
+                min(length(cur.details), cur.tTest(cnt3, 2) + params.identify.testMargin);
             idx = find(cur.details(range)) + range(1) - 1;
 
             % Intially nothing attached
             attached = length(ref) + 1; 
             for cnt4 = idx'
                 % Find the accessory that minimizes diff errors.
-                [~, identified] = min(sum(feature(cnt).trial(cnt2).identify(:, cnt4 + params.identify.featureRange), 2));
+                range = cnt4 + params.identify.featureRange;
+                range(range > length(feature(cnt).trial(cnt2).identify)) = [];
+
+                [~, identified] = min(sum(feature(cnt).trial(cnt2).identify(:, range), 2));
                 identified = ceil(identified / params.ref.nSub);
 
                 if identified == attached 

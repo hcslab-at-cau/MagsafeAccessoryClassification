@@ -41,13 +41,16 @@ for cnt = 1:length(data)
 
             feature(cnt).trial(cnt2).detect.(sensor) = cur;
         end
+
     end
 end
 
 %% Extract features used for identification
+params.pre.mType = 'mag';
+
 for cnt = 1:length(data)
     for cnt2 = 1:length(data(cnt).trial)
-        mag = feature(cnt).trial(cnt2).detect.rmag;
+        mag = feature(cnt).trial(cnt2).detect.(params.pre.mType);
 
         idx = 1;
         feature(cnt).trial(cnt2).identify = zeros(length(ref) * params.ref.nSub + 1, length(mag.raw));

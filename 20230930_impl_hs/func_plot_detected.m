@@ -1,5 +1,5 @@
-function [] = func_plot_detected(data, result, dId, tId)
-data = data(dId).trial(tId).detect.rmag;
+function [] = func_plot_detected(data, result, mType, dId, tId)
+data = data(dId).trial(tId).detect.(mType);
 result = result(dId).trial(tId).detect;
 
 clf

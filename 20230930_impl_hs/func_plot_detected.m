@@ -1,20 +1,24 @@
 function [] = func_plot_detected(data, result, mType, dId, tId)
-data = data(dId).trial(tId).detect.(mType);
+mag = data(dId).trial(tId).detect.(mType);
+gyro = data(dId).trial(tId).detect.gyro;
 result = result(dId).trial(tId).detect;
 
 clf
-subplot 511
-plot(data.magnitude)
+subplot 611
+plot(mag.magnitude)
 
-subplot 512
-plot(data.diff)
+subplot 612
+plot(mag.diff)
 
-subplot 513
+subplot 613
+plot(sum(gyro.raw.^2, 2))
+
+subplot 614
 plot(result.mag)
 
-subplot 514
+subplot 615
 plot(result.diff)
 
-subplot 515
+subplot 616
 plot(result.all)
 end

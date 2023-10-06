@@ -4,7 +4,7 @@ clear;
 global params;
 params = struct();
 params.data.newApp = true;
-params.data.path = '../Data/Default_dataset/Jaemin8';
+params.data.path = '../Data/Default_dataset/jaemin8';
 params.data.postfix = char({'normal_objects'});
 
 params.data.sensors = {'gyro', 'mag'};
@@ -21,7 +21,7 @@ else
 end
 
 %% Load reference feature data
-params.ref.path = 'features/jaemin9_p2p.mat';
+params.ref.path = 'features/Jaemin8_p2p.mat';
 params.ref.nData = 50;
 params.ref.nSub = 5;
 params.ref.nSubData = floor(params.ref.nData / (params.ref.nSub));
@@ -33,6 +33,7 @@ ref(~ismember({ref(:).name}, {data.name})) = [];
 for cnt = 1:length(ref)
     ref(cnt).raw = ref(cnt).feature;   
     ref(cnt).feature = zeros(params.ref.nSub, 3);
+    ref(cnt).isChargeable = func_isChargeable(ref(cnt).name);
 
     % Divide references into subsets
     for cnt2 = 1:params.ref.nSub

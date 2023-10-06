@@ -2,6 +2,7 @@
 params.identify.featureRange = params.data.rate * 0.5 + (1:params.data.rate * 2);
 params.identify.testMargin = params.data.rate * 3;
 
+tic
 for cnt = 1:length(result)
     class = find(cellfun('isempty', strfind({ref.name}, data(cnt).name)) == 0);
     if isempty(class)
@@ -9,6 +10,7 @@ for cnt = 1:length(result)
     end
     result(cnt).name = data(cnt).name;
     result(cnt).class = class;
+    result(cnt).isChargeable = func_isChargeable(result(cnt).name);
 
     for cnt2 = 1:length(result(cnt).trial)
         cur = struct();        
@@ -29,8 +31,14 @@ for cnt = 1:length(result)
                 range = cnt4 + params.identify.featureRange;
                 range(range > length(feature(cnt).trial(cnt2).identify)) = [];
 
-                [~, identified] = min(sum(feature(cnt).trial(cnt2).identify(:, range), 2));
+                [~, identified] = sort(sum(feature(cnt).trial(cnt2).identify(:, range), 2), 'ascend');
                 identified = ceil(identified / params.ref.nSub);
+                
+                if identified(1) ~= length(ref) + 1
+                    identified(identified == length(ref) + 1) = [];                
+                    identified([ref(identified).isChargeable] ~= result(cnt).isChargeable) = [];                    
+                end
+                identified = identified(1);                
 
                 if identified == attached 
                     % False positive if an accessory is not newly attached or detached
@@ -48,7 +56,7 @@ for cnt = 1:length(result)
         result(cnt).trial(cnt2).identify = cur;
     end
 end
-
+toc
 
 %% Plotting detection results
 clf

@@ -8,7 +8,7 @@ end
 distanceThreshold = 50;
 calibrationThreshold = 2;
 interval = 100;
-start = 100;
+start = 500;
 wSize = 100;
 extractInterval = (-wSize*2:wSize);
 
@@ -42,7 +42,7 @@ totalAcc{end + 1} = 'undefined';
 results = struct();
 tic
 
-for cnt = 1:length(data)
+parfor cnt = 1:length(data)
     nTrials = length(data(cnt).trial);
     accName = data(cnt).name;
     results(cnt).name = accName;
@@ -69,6 +69,9 @@ for cnt = 1:length(data)
         mag.inferAngle = zeros(length(mag.sample), 1);
         mag.diffSum = zeros(length(mag.sample), 1);
 
+        [calm, bias, ~] = magcal(rmag.rawSample(1:500, :));
+        mag.sample = (rmag.rawSample-bias)*calm;
+
         lResult = min([length(gyro.sample), length(mag.sample)]);
         
         for t = 2:start
@@ -80,7 +83,6 @@ for cnt = 1:length(data)
             mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
             diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
             mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
-            
         end
 
         for t = 1 + start:lResult
@@ -135,13 +137,12 @@ for cnt = 1:length(data)
                     calibrationRange = 1:calibrationRange(end);
                 end
 
-                calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
+                % calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
                 
                 % Calibrate magnetometer
-                [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
-
-                % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
-                [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange, refPoint);
+                % [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
+                [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractRange, 1, 100);
+                % [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange, refPoint);
 
                 % knnsearch for remove false-positive
                 if accessoryStatus == false
@@ -445,8 +446,8 @@ result = results(accId).trial(trialId);
 
 click = cur.detect.sample;
 detect = cell2mat({result.result.detect});
-candidates = result.candidates;
-shakePoint = result.shakePoints;
+% candidates = result.candidates;
+% shakePoint = result.shakePoints;
 
 rmag = cur.rmag;
 gyro = cur.gyro;
@@ -473,9 +474,9 @@ hold on
 plot(diff1s)
 stem(detect, diff1s(detect, 1), 'filled')
 stem(click, diff1s(click, 1), 'filled')
-stem(shakePoint, diff1s(shakePoint, 1), 'filled')
+% stem(shakePoint, diff1s(shakePoint, 1), 'filled')
 title(data(accId).name)
-legend({'x', 'y', 'z', 'detect', 'click', 'shake'})
+legend({'x', 'y', 'z', 'detect', 'click'})
 % filter5 = find(filter5);
 % stem(candidates, diff1s(candidates, 3), 'filled')
 

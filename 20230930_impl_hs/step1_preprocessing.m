@@ -44,10 +44,12 @@ for cnt = 1:length(data)
 
     end
 end
+toc
 
 %% Extract features used for identification
-params.pre.mType = 'mag';
+params.pre.mType = 'rmag';
 
+tic
 for cnt = 1:length(data)
     for cnt2 = 1:length(data(cnt).trial)
         mag = feature(cnt).trial(cnt2).detect.(params.pre.mType);

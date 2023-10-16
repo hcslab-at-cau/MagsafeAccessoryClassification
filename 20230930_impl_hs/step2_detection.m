@@ -1,5 +1,5 @@
 %% Detect events
-params.detect.magTh = 2;
+params.detect.magTh = .5;
 params.detect.diffTh = 5;
 
 params.detect.initRange = params.pre.cRange;
@@ -35,4 +35,4 @@ end
 toc
 
 %%
-% func_plot_detected(feature, result, params.detect.mType, 10, 2);
+func_plot_detected(feature, result, params.detect.mType, 7, 2);

@@ -59,32 +59,32 @@ end
 toc
 
 %% Plotting detection results
-% clf
-% nRow = length(result);
-% nCol = length(result(1).trial);
-% for cnt = 1:length(result)
-%     for cnt2 = 1:length(result(cnt).trial)
-%         cur = result(cnt).trial(cnt2).identify;
-%         subplot(nRow, nCol, (cnt - 1) * nCol + cnt2)
-%         hold on
-%         plot(cur.details)
-%         plot(ones(1, length(cur.details)) * result(cnt).class)
-%         plot(ones(1, length(cur.details)) * length(ref) + 1)
-%         title(result(cnt).name)
-%     end
-% end
-
-dId = 10;
-tId = 1;
-cur = feature(dId).trial(tId).identify;
-
-subplot(size(cur, 1) + 1, 1, 1)
-plot(result(dId).trial(tId).identify.details)
-
-for cnt = 1:size(cur, 1)
-    subplot(size(cur, 1) + 1, 1, cnt + 1)
-    plot(cur(cnt, :))
-    if cnt < size(cur, 1)
-        title([data(dId).name, ' w/ ', ref(cnt).name]);
+clf
+nRow = length(result);
+nCol = length(result(1).trial);
+for cnt = 1:length(result)
+    for cnt2 = 1:length(result(cnt).trial)
+        cur = result(cnt).trial(cnt2).identify;
+        subplot(nRow, nCol, (cnt - 1) * nCol + cnt2)
+        hold on
+        plot(cur.details)
+        plot(ones(1, length(cur.details)) * result(cnt).class)
+        plot(ones(1, length(cur.details)) * length(ref) + 1)
+        title(result(cnt).name)
     end
 end
+
+% dId = 10;
+% tId = 1;
+% cur = feature(dId).trial(tId).identify;
+% 
+% subplot(size(cur, 1) + 1, 1, 1)
+% plot(result(dId).trial(tId).identify.details)
+% 
+% for cnt = 1:size(cur, 1)
+%     subplot(size(cur, 1) + 1, 1, cnt + 1)
+%     plot(cur(cnt, :))
+%     if cnt < size(cur, 1)
+%         title([data(dId).name, ' w/ ', ref(cnt).name]);
+%     end
+% end

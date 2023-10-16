@@ -5,7 +5,7 @@ global params;
 params = struct();
 params.data.newApp = true;
 params.data.path = '../Data/Default_dataset/Jaemin10';
-params.data.postfix = char({'Normal_objects', 'Holders'});
+params.data.postfix = char({'Normal_objects', 'Holders4'});
 
 params.data.sensors = {'gyro', 'mag'};
 params.data.rate = 100;
@@ -23,7 +23,7 @@ end
 %% Load reference feature data
 params.ref.path = 'features/jaemin9_p2p.mat';
 params.ref.nData = 50;
-params.ref.nSub = 1;
+params.ref.nSub = 5;
 params.ref.nSubData = floor(params.ref.nData / (params.ref.nSub));
 
 load(params.ref.path);

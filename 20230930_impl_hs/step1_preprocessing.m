@@ -21,7 +21,7 @@ for cnt = 1:length(data)
             switch sensor                
                 case 'gyro' % Obtain quaternions 
                     cur.raw = sample;
-                    cur.q = func_quat_from_gyro(sample, params.data.rate);
+                    [cur.q, cur.cumQ] = func_quat_from_gyro(sample, params.data.rate);
                                         
                 case {'mag', 'rmag'} 
                     % Do calication

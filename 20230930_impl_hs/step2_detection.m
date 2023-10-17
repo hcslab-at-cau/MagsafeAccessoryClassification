@@ -35,4 +35,4 @@ end
 toc
 
 %%
-func_plot_detected(feature, result, params.detect.mType, 7, 2);
+% func_plot_detected(feature, result, params.detect.mType, 7, 2);

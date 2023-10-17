@@ -59,6 +59,7 @@ end
 toc
 
 %% Plotting detection results
+figure(2)
 clf
 nRow = length(result);
 nCol = length(result(1).trial);

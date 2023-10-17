@@ -20,12 +20,8 @@ click = tmp.detect.sample;
 
 mdlPath = '../MatlabCode/models/';
 
-% mdl = load([mdlPath, 'jaeminrbfSVM', '.mat']);
-mdl = load('rotMdl.mat');
+mdl = load([mdlPath, 'jaemin9_linearSVM']);
 mdl = mdl.mdl;
-% 
-% features = func_load_feature(['jaemin9', '_p2p']);
-% featureMatrix = func_make_unit_matrix(features);
 
 featureMatrix.data = mdl.X;
 featureMatrix.label = mdl.Y;
@@ -54,12 +50,10 @@ refPoint = -1; % reference point : detection points that has maximum value of ma
 curPoints = []; 
 prevPoints = [];
 
-totalRefPoints = [];
-totalStartPoints = [];
-totalEndPoints = [];
-totalDecisionPoints = [];
-totalfpPoints = [];
-totalextractStart = [];
+% For plotting
+refPoints = [];
+fpPoints = [];
+class = {};
 
 tic
 interval = 100;
@@ -70,7 +64,8 @@ calbrationInterval = (-6*wSize:-wSize);
 % Initially calibrated raw magnetometer
 rawUse = false;
 
-% [calm, bias, expmfs] = magcal(rmag.rawSample(1:length(calibrationInterval), :));
+[calm, bias, expmfs] = magcal(rmag.rawSample(1:500, :));
+mag.sample = (rmag.rawSample-bias)*calm;
 
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 mag.dAngle = zeros(length(mag.sample), 1);
@@ -129,9 +124,6 @@ for t = 1 + start:lResult
         end
 
         refPoint = startPoint + find(magnitude == max(magnitude(tarIdx))) - 1;
-        totalStartPoints(end + 1) = startPoint;
-        totalEndPoints(end + 1) = t; 
-        % refPoint
 
         startPoint = -1;
         prevPoints = curPoints;
@@ -141,14 +133,14 @@ for t = 1 + start:lResult
     % Feature extraction using charging status
     if refPoint ~= -1 && (refPoint + chargingLatency <= t || t == length(mag.sample))
         extractRange = refPoint + extractInterval;
-        calibrationRange = refPoint + calbrationInterval;
+        % calibrationRange = refPoint + calbrationInterval;
+        % 
+        % if calibrationRange(1) < 1
+        %     calibrationRange = 1:calibrationRange(end);
+        % end
+        % calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
 
-        if calibrationRange(1) < 1
-            calibrationRange = 1:calibrationRange(end);
-        end
-        calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
-
-        [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
+        % [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
         % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
         [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange, refPoint);
         
@@ -157,14 +149,6 @@ for t = 1 + start:lResult
         else
             [~, distance] = knnsearch(featureMatrix.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
         end
-          
-        % if accessoryStatus == false
-        %     [featureValue, inferredMag] = func_extract_feature(mag.sample, gyro.sample, extractRange, 4, rate);
-        %     [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
-        % else
-        %     [featureValue, inferredMag] = func_extract_feature_reverse(mag.sample, gyro.sample, extractRange, 4, rate);
-        %     [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
-        % end
 
         if accessoryStatus
             s = 'attached';
@@ -194,15 +178,14 @@ for t = 1 + start:lResult
                 disp(['attach : ', char(label)])
             else
                 disp(['detach : ', char(label)])
-                
             end  
+            
+            class{end + 1} = [char(label), '-', num2str(mean(distance))];
 
             accessoryStatus = ~accessoryStatus;        
-            totalRefPoints(end + 1) = refPoint;
-            totalDecisionPoints(end + 1) = t;
+            refPoints(end + 1) = refPoint;
         else
-            totalfpPoints(end + 1) = refPoint;
-            totalDecisionPoints(end + 1) = t;
+            fpPoints(end + 1) = refPoint;
         end
         disp('end!')
         
@@ -227,29 +210,24 @@ colors = rand(5, 3);
 subplot(nRow, nCol, 1)
 hold on
 plot(mag.diff)
-
-if isempty(totalRefPoints)
-    totalRefPoints(end + 1) = 1;
-end
-
-if isempty(totalfpPoints)
-    totalfpPoints(end + 1) = 1;
-end
-
-stem(totalRefPoints, mag.diff(totalRefPoints, 2), 'filled')
-% stem(totalStartPoints, mag.diff(totalStartPoints, 2), 'LineStyle','none', 'Marker', 'o')
-% stem(totalEndPoints, mag.diff(totalEndPoints, 2), 'LineStyle','none', 'Marker','x')
-stem(totalDecisionPoints, mag.diff(totalDecisionPoints, 2), 'LineStyle','none', 'Marker','<')
-stem(totalfpPoints, mag.diff(totalfpPoints, 2), 'filled')
+title(accName)
 stem(click, mag.diff(click, 2), 'filled')
-legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click'})
 
-if exist('chargingTime', 'var')
-    % stem(chargingTime, mag.diff(chargingTime, 2), 'filled')
-    % legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click','charging'})
-else
-    % legend({'x', 'y', 'z', 'ref', 'decision', 'fp', 'click'})
+legends = {'x', 'y', 'z', 'ground-truth'};
+
+if ~isempty(refPoints)
+    yt = mag.diff(refPoints, 2);
+    text(refPoints, yt, class)
+    stem(refPoints, mag.diff(refPoints, 2), 'filled')
+    legends{end + 1} = 'ref';
 end
+
+if ~isempty(fpPoints)
+    stem(fpPoints, mag.diff(fpPoints, 2), 'filled')
+    legends{end + 1} = 'fp';
+end
+
+legend(legends)
 
 [b.high, a.high] = butter(4, 10/rate * 2, 'high');
 fh = filtfilt(b.high, a.high, mag.diffSum);
@@ -270,10 +248,10 @@ end
 clf
 
 nRow = 1;
-nCol = length(totalRefPoints);
+nCol = length(refPoints);
 
-for cnt = 1:length(totalRefPoints)
-    ref = totalRefPoints(cnt);
+for cnt = 1:length(refPoints)
+    ref = refPoints(cnt);
     extractRange = ref + extractInterval;
 
     calRange = ref + calbrationInterval;

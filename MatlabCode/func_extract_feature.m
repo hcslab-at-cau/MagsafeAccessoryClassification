@@ -1,4 +1,7 @@
-function [res, inferredMag] = func_extract_feature(mag, gyro, range, interval, rate)
+function [res, inferredMag] = func_extract_feature(mag, gyro, range, interval, status)
+    % status == false means accessory status is detached
+    rate = 100;
+    
     l = min([length(mag), length(gyro)]);
 
     if range(1) < 2
@@ -9,21 +12,28 @@ function [res, inferredMag] = func_extract_feature(mag, gyro, range, interval, r
         range = range(1):l;
     end
 
+    if status
+        range = flip(range);
+    end
+
     refMag = mag(range(1)-1, :);
 
-    for t = range(1):interval:range(end)
+    for t = range
         lIdx = t+ interval-1;
 
         if lIdx > range(end)
            lIdx = range(end);
         end
-        
+          
         euler = sum(gyro(t:lIdx, :)) * 1/rate;
 
         if t == lIdx
             euler = gyro(t, :) * 1/rate;
         end
 
+        if status
+            euler = -euler;
+        end
 
         rotm = eul2rotm(euler, 'XYZ');
 

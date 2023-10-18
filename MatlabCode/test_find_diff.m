@@ -1,12 +1,12 @@
 clear exp;
 
-accId = 8;
+accId = 6;
 showTrials = 1:2;
 
 wSize = 100;
 rate = 100;
 calibrationInterval = -5*wSize:-wSize;
-attachInterval = -wSize:wSize;
+attachInterval = -wSize*2:wSize;
 calibrationThreshold = 2;
 
 lowCutoff = 5;
@@ -18,11 +18,9 @@ feature = objectFeature(accId).feature
 [b.low, a.low] = butter(4, lowCutoff/rate * 2, 'low');
 [b.high, a.high] = butter(4, highCutoff/rate * 2, 'high');
 
-[b.low2, a.low2] = butter(4, 5/rate * 2, 'low');
 
 mdlPath = '../MatlabCode/models/';
-% mdl = load([mdlPath, 'jaeminlinearSVM', '.mat']);
-mdl = load([mdlPath, 'rotMdl', '.mat']);
+mdl = load([mdlPath, 'rotMdl2', '.mat']);
 mdl = mdl.mdl;
 
 featureMatrix.data = mdl.X;
@@ -38,13 +36,13 @@ for cnt = 1:length(showTrials)
     rawSample = rmag.rawSample;
     click = cur.detect.sample;
 
-    [calm, bias, ~] = magcal(rmag.rawSample(1:500), :);
+    [calm, bias, ~] = magcal(rmag.rawSample(1:500, :));
+    mag.sample = (rmag.rawSample-bias)*calm;
 
     w = 600; 
     h = 400;
 
     fig = figure(showTrials(cnt) + length(calibrationInterval)-1);
-    % fig.Position(3:4) = [w*2, h];
     clf
 
     iter = 1:2:length(click);
@@ -54,8 +52,8 @@ for cnt = 1:length(showTrials)
     
     for cnt2 = iter
         t = click(cnt2);
-
         
+        status = (mod(cnt2, 2) == 1);
         % Extract range for feature extraction
         range = t + attachInterval;
         if range(1) < 2
@@ -78,26 +76,24 @@ for cnt = 1:length(showTrials)
         end
 
         % Calibration magnetometer
-        [calm, bias, ~] = magcal(rawSample(calRange, :));
+        % [calm, bias, ~] = magcal(rawSample(calRange, :));
 
-        [~, diff1s]= func_get_diff(mag.sample, gyro, calRange);
+        [~, diff1s]= func_get_diff(mag.sample, gyro, calRange, status);
 
         diffSum = sqrt(sum(diff1s.^2, 2));
 
         % Magnetometer Calibration filtering
         calRange = calRange(diffSum < calibrationThreshold);
-        [calm, bias, ~] = magcal(rawSample(calRange, :));
-        
-        [diffOriginal, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
+        % [calm, bias, ~] = magcal(rawSample(calRange, :));
+        [diffOriginal, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range, status);
 
         diffSum = sqrt(sum(diff1s.^2, 2));
         
-
         % LPF, HPF
         fh = filtfilt(b.high, a.high, diffSum);
         fl = filtfilt(b.low, a.low, diffSum);
 
-        hpfMaxIdx = find(max(fh) == fh);
+        hpfMaxIdx = find(max(fh(21:end-21)) == fh);
         tmp = fl((hpfMaxIdx-20):(hpfMaxIdx+20));
         lpfMaxIdx = hpfMaxIdx - 20 -1 + find((max(tmp) == tmp));
 
@@ -107,12 +103,11 @@ for cnt = 1:length(showTrials)
         % Calculated diff filtered by hpf, lpf
         hpfMaxIdxLocal = hpfMaxIdxGlobal - range(1)+ 1;
 
-        [diff, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range);
+        [diff, diff1s] = func_get_diff((rawSample-bias)*calm, gyro, range, status);
 
         idx = find(iter==cnt2);
 
-
-        [~, extractedRange] = func_extract_feature_extend((rawSample-bias)*calm, gyro, range, hpfMaxIdxGlobal, 1.0);
+        extractedRange = func_extract_range((rawSample-bias)*calm, gyro, range, hpfMaxIdxGlobal);
         showRange = extractedRange - range(1) + 1;
         
         lst = [showRange(1), hpfMaxIdxLocal, showRange(end)];
@@ -138,14 +133,14 @@ for cnt = 1:length(showTrials)
         hold on
         plot(fl)
         stem(lst, fl(lst), 'filled')
-        title(['LPF ', num2str(lowCutoff), 'Hz'])
+        title(['LPF ', num2str(lowCutoff), 'Hz - ', num2str(extractedRange(1)), '-', num2str(extractedRange(end))])
         
-        [featureValue, ~] = func_get_diff((rawSample-bias)*calm, gyro, extractedRange);
-            
-        if mod(cnt2, 2) == 1
+        [featureValue, ~] = func_get_diff((rawSample-bias)*calm, gyro, extractedRange, status);
+
+        if status
             f = featureValue(end, :);
         else
-            f = -featureValue(end, :);
+            f = featureValue(1, :);
         end
 
         [preds, scores] = predict(mdl, f);
@@ -162,7 +157,8 @@ for cnt = 1:length(showTrials)
 
         subplot(nRow, nCol, nCol*5 + idx)
         hold on
-        plot(rawSample(range, :)-rawSample(range(1), :))
+        % plot(rawSample(range, :)-rawSample(range(1), :))\
+        plot(rawSample(range, :))
         title('rawSample range')
 
         subplot(nRow, nCol, nCol*6 + idx)
@@ -174,10 +170,15 @@ for cnt = 1:length(showTrials)
     end
 end
 %% Function for get Diff graphs
-function [diff, diff1s] = func_get_diff(mag, gyro, range)
+function [diff, diff1s] = func_get_diff(mag, gyro, range, status)
+% status == true means original else revserse
 
 diff = zeros(length(range), 3);
 diff1s = zeros(length(range), 3);
+
+if ~status
+    range = flip(range);
+end
 
 refMag = mag(range(1), :);
 
@@ -185,11 +186,21 @@ for cnt = 2:length(range)
     t = range(cnt);
 
     euler = gyro.sample(t, :) * 1/100;
+
+    if ~status
+        euler = -euler;
+    end
+    
     rotm = eul2rotm(euler, 'XYZ');
 
     refMag = (rotm\(refMag)')';
     diff(cnt, :) = mag(t, :) - refMag;
     diff1s(cnt, :) = mag(t, :) - (rotm\(mag(t-1, :))')';
+end
+
+if ~status
+    diff = flip(diff);
+    diff1s = flip(diff1s);
 end
 
 end

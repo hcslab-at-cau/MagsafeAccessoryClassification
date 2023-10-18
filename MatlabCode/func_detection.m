@@ -4,7 +4,7 @@ detectPoints = [];
 interval = 100;
 
 % Detection thresholds
-magThreshold = 1;
+magThreshold = 2;
 cfarThreshold = .9999;
 corrThreshold = .9;
 dAngleThreshold = .01;

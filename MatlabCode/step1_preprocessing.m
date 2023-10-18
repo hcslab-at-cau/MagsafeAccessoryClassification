@@ -16,7 +16,7 @@ order = 4;
 [b.mag, a.mag] = butter(order, 10/rate * 2, 'high');
 
 wSize = 1 * rate;
-calibrationRange = (1:300); % For raw magnetometer calibration
+calibrationRange = (1:500); % For raw magnetometer calibration
 
 % Filter parameters for accelerometer 
 [b.acc, a.acc] = butter(order, 40/rate * 2, 'high');

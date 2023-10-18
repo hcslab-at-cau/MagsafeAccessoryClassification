@@ -12,7 +12,8 @@ labels.predict = [];
 labels.label = [];
 mdl = load('rotMdl.mat');
 mdl = mdl.mdl;
-totalAcc = mdl.ClassNames;
+totalAcc = reshape(objects, [length(objects), 1]);
+
 
 for cnt = 1:length(results)
     tmp = struct();

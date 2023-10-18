@@ -2,7 +2,7 @@ figure(8)
 clf
 
 accId = 11;
-showTrials = 1:1;
+showTrials = 1:2;
 
 nCol = length(showTrials);
 nRow = 3;
@@ -10,12 +10,25 @@ disp(data(accId).name)
 
 for cnt = 1:length(showTrials)
     detect = detected(accId).trial(showTrials(cnt)).filter6;
-    mag = data(accId).trial(showTrials(cnt)).mag;
+    mag = data(accId).trial(showTrials(cnt)).rmag;
     gyro = data(accId).trial(showTrials(cnt)).gyro;
+
+    diff = zeros(length(mag.sample), 3);
+    [calm, bias, ~] = magcal(mag.rawSample(1:500, :));
+    mag.sample = (mag.rawSample-bias)*calm;
+
+    refMag = mag.sample(1, :);
+    for t = 2:length(mag.sample)
+        euler = gyro.sample(t, :) * 1/100;
+        rotm = eul2rotm(euler, 'XYZ');
+        refMag = (rotm\(refMag)')';
+
+        diff(t, :) = mag.sample(t, :) - refMag;
+    end
 
     subplot(nRow, nCol, cnt)
     hold on
-    plot(mag.diff)
+    plot(diff)
     title('diff')
     legend({'x', 'y', 'z'})
 

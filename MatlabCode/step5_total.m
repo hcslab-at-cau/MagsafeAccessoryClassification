@@ -5,28 +5,21 @@ if ~isempty(find(idx, 1))
     data = data(~idx);
 end
 
-distanceThreshold = 50;
-calibrationThreshold = 2;
 interval = 100;
 start = 500;
 wSize = 100;
+
+distanceThreshold = 40;
+calibrationThreshold = 2;
+
 extractInterval = (-wSize*2:wSize);
-
-attachInterval = (-wSize*2:wSize);
-detachInterval = (-wSize:2*wSize);
 calbrationInterval = (-6*wSize:-1*wSize);
-
 chargingLatency = 200;
-
 chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
 
 % Model and training data load
-mdlDir = 'jaemin9';
 mdlPath = '../MatlabCode/models/';
-kernelName = 'rbfSVM';
-
-% mdl = load([mdlPath, 'jaeminrbfSVM', '.mat']);
-mdl = load('rotMdl.mat');
+mdl = load([mdlPath, 'rotMdl2', '.mat']);
 mdl = mdl.mdl;
 
 featureMatrix.data = mdl.X;
@@ -53,8 +46,7 @@ parfor cnt = 1:length(data)
         tmp = data(cnt).trial(cnt2);
         cur = struct();
 
-        mag = tmp.mag;
-        rmag = tmp.rmag;
+        mag = tmp.rmag;
         acc = tmp.acc;
         gyro = tmp.gyro;
 
@@ -63,44 +55,11 @@ parfor cnt = 1:length(data)
         curPoints = []; 
         prevPoints = [];
         cnt3 = 1; % count for detection
-        distanceCnt = 0; % Count for distance filter 
-
-        mag.dAngle = zeros(length(mag.sample), 1);
-        mag.inferAngle = zeros(length(mag.sample), 1);
-        mag.diffSum = zeros(length(mag.sample), 1);
-
-        [calm, bias, ~] = magcal(rmag.rawSample(1:500, :));
-        mag.sample = (rmag.rawSample-bias)*calm;
 
         lResult = min([length(gyro.sample), length(mag.sample)]);
         
-        for t = 2:start
-            mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
-            euler = gyro.sample(t, :) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            inferredMag = (rotm\(mag.sample(t-1, :))')';
-            
-            mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
-            diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
-            mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
-        end
-
-        for t = 1 + start:lResult
-            mag.dAngle(t) = subspace(mag.sample(t, :)', mag.sample(t - 1, :)');
-            euler = gyro.sample(t, :) * 1/rate;
-            rotm = eul2rotm(euler, 'XYZ');
-            inferredMag = (rotm\(mag.sample(t-1, :))')';
-            
-            mag.inferAngle(t) = subspace(inferredMag', mag.sample(t, :)');
-            diff1s = mag.sample(t, :) - (rotm\(mag.sample(t-1, :))')';
-            mag.diffSum(t) = sqrt(sum(diff1s.^2, 2));
-        
-            if mod(t, 5) ~= 0
-                continue;
-            end
-        
+        for t = start + 1:5:lResult
             range = t + (-interval:-1);
-            
             [flag, points] = func_detection(mag, acc, range, accessoryStatus, t);
             
             % Detect accessory attach or detach
@@ -131,32 +90,40 @@ parfor cnt = 1:length(data)
             % Feature extraction using charging status
             if refPoint ~= -1 && (refPoint + chargingLatency <= t || t == length(mag.sample))
                 extractRange = refPoint + extractInterval;
-                calibrationRange = refPoint + calbrationInterval;
-
-                if calibrationRange(1) < 1
-                    calibrationRange = 1:calibrationRange(end);
-                end
+               
+                % calibrationRange = refPoint + calbrationInterval;
+                % 
+                % if calibrationRange(1) < 1
+                %     calibrationRange = 1:calibrationRange(end);
+                % end
 
                 % calibrationRange = calibrationRange(mag.diffSum(calibrationRange) < calibrationThreshold);
                 
                 % Calibrate magnetometer
-                % [calm, bias, ~] = magcal(rmag.rawSample(calibrationRange, :));
-                [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractRange, 1, 100);
-                % [featureValue, ~] = func_extract_feature_extend((rmag.rawSample-bias)*calm, gyro, extractRange, refPoint);
+                % [calm, bias, ~] = magcal(mag.rawSample(calibrationRange, :));
+                % mag.sample = (mag.rawSample-bias)
+
+
+                extractRange = func_extract_range(mag.sample, gyro, extractRange, refPoint);
 
                 % knnsearch for remove false-positive
-                if accessoryStatus == false
-                    [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
-                else
-                    [~, distance] = knnsearch(featureMatrix.data, -featureValue, 'K', 7, 'Distance', 'euclidean');
-                end
+                [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractRange, 1, accessoryStatus);
+
+                [preds, scores] = predict(mdl, featureValue);
+                probs = exp(scores) ./ sum(exp(scores),2);
+
+                % Consider charing status
+                label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
+                indices = ismember(featureMatrix.label, label);
+                
+                [~, distance] = knnsearch(featureMatrix.data(indices, :), featureValue, 'K', 7, 'Distance', 'euclidean');
         
                 if mean(distance) < distanceThreshold
-                    [preds, scores] = predict(mdl, featureValue);
-                    probs = exp(scores) ./ sum(exp(scores),2);
-
-                    % Consider charing status
-                    label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
+                    % [preds, scores] = predict(mdl, featureValue);
+                    % probs = exp(scores) ./ sum(exp(scores),2);
+                    % 
+                    % % Consider charing status
+                    % label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
                     
                     accessoryStatus = ~accessoryStatus;
                     cur(cnt3).detect = refPoint;
@@ -172,8 +139,6 @@ parfor cnt = 1:length(data)
 
                     cur(cnt3).label = accName; % True label
                     cnt3 = cnt3 + 1;
-                else
-                    distanceCnt = distanceCnt + 1;
                 end
                 
                 refPoint = -1;
@@ -182,7 +147,6 @@ parfor cnt = 1:length(data)
         
         results(cnt).trial(cnt2).result = cur;
         results(cnt).trial(cnt2).detection = sum(cnt3-1);
-        results(cnt).trial(cnt2).distanceCnt = distanceCnt;
     end
 end
 toc
@@ -190,6 +154,15 @@ toc
 run('step5_total_evaluation.m')
 
 return;
+
+%% Using ground-truth
+clear exp;
+
+parfor cnt = 1:length(data)
+    
+end
+
+
 %% Using diff
 
 % run('step0_load_data.m')
@@ -434,52 +407,6 @@ end
 toc
 
 run('step5_total_evaluation.m')
-
-%%
-accId = 7;
-trialId = 2;
-
-[b.high, a.high] = butter(4, 5/rate*2, 'high');
-
-cur = data(accId).trial(trialId);
-result = results(accId).trial(trialId);
-
-click = cur.detect.sample;
-detect = cell2mat({result.result.detect});
-% candidates = result.candidates;
-% shakePoint = result.shakePoints;
-
-rmag = cur.rmag;
-gyro = cur.gyro;
-
-[calm, bias, ~] = magcal(rmag.rawSample(1:500, :));
-sample = (rmag.rawSample-bias)*calm;
-diff1s = zeros(length(sample), 3);
-
-for cnt = 2:length(sample)
-    euler = gyro.sample(cnt, :) * 1/100;
-    rotm = eul2rotm(euler, 'XYZ');
-
-    diff1s(cnt, :) = sample(cnt, :) - (rotm\(sample(cnt-1, :))')';
-end
-
-figure(25)
-clf
-
-hold on
-
-% diff1s = filtfilt(b.high, a.high, diff1s);
-% diff1s = sum(sqrt(diff1s.^2), 2);
-
-plot(diff1s)
-stem(detect, diff1s(detect, 1), 'filled')
-stem(click, diff1s(click, 1), 'filled')
-% stem(shakePoint, diff1s(shakePoint, 1), 'filled')
-title(data(accId).name)
-legend({'x', 'y', 'z', 'detect', 'click'})
-% filter5 = find(filter5);
-% stem(candidates, diff1s(candidates, 3), 'filled')
-
 %% Detection of shaking
 function flag = func_detect_shaking(acc, gyro, range)
 flag= false;

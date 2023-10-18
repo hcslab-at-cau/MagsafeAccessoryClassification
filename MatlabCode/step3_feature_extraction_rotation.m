@@ -67,7 +67,7 @@ for cnt = 1:length(rotationFeatures)
     values(cnt).feature = value;
 end
 
-acc = {'griptok1', 'holder4'};
+acc = {'holder3-charge'};
 totalAcc = {values.name};
 
 values = values(~ismember(totalAcc, acc));
@@ -101,4 +101,4 @@ zlabel('z')
 
 return;
 %% Save feature
-func_save_feature(values, ['jaemin1', '_rotation'])
+func_save_feature(values, ['jaemin1', '_rotation2'])

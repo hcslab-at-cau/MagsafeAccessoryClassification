@@ -3,7 +3,7 @@ params.identify.featureSource = params.data.rate * .5;
 params.identify.featureRange = params.data.rate * .5 + (1:params.data.rate * 2);
 params.identify.testMargin = params.data.rate * 3;
 
-params.identify.threshold = 0.5;
+params.identify.threshold = .5;
 
 
 refSet = [];
@@ -13,7 +13,7 @@ end
 
 tic
 for cnt = 1:length(result)
-% for cnt = 2
+% for cnt = 4
     class = find(cellfun('isempty', strfind({ref.name}, data(cnt).name)) == 0);
     if isempty(class)
         class = 0;
@@ -23,87 +23,74 @@ for cnt = 1:length(result)
     result(cnt).isChargeable = func_isChargeable(result(cnt).name);
 
     for cnt2 = 1:length(result(cnt).trial)
-%     for cnt2 = 2
         cur = struct();        
         cur.tTest = data(cnt).trial(cnt2).detect.sample;
         cur.tTest = reshape(cur.tTest, 2, length(cur.tTest)/2)';
         cur.details = double(result(cnt).trial(cnt2).detect.all);
 
-        mag = feature(cnt).trial(cnt2).detect.rmag;        
+        mag = feature(cnt).trial(cnt2).rmag;      
+        mag.safePts = find(mag.mean <= params.identify.threshold);
+
+        gyro = feature(cnt).trial(cnt2).gyro;        
         % Perform individual tests for each attach-detach pair
         for cnt3 = 1:size(cur.tTest, 1)
             range = max(1, cur.tTest(cnt3, 1) - params.identify.testMargin): ...
                 min(length(cur.details), cur.tTest(cnt3, 2) + params.identify.testMargin);
             idx = find(cur.details(range)) + range(1) - 1;
-
+            
             % Intially nothing attached
-            attached = length(ref) + 1; 
-            attachedBias = [0, 0, 0];
-            for cnt4 = idx'                                
-                % Find the accessory that minimizes diff errors.
-                range = cnt4 + params.identify.featureRange;
-                range(range > length(feature(cnt).trial(cnt2).identify)) = [];
-                                
-                src = feature(cnt).trial(cnt2).detect.rmag.calibrated(cnt4 - params.identify.featureSource, :);
-                q = feature(cnt).trial(cnt2).detect.gyro.cumQ(cnt4 - params.identify.featureSource, :);                
-
-                dst = feature(cnt).trial(cnt2).detect.rmag.calibrated(range, :);
-                cumQ = feature(cnt).trial(cnt2).detect.gyro.cumQ(range, :);
-                
-                if attached ~= length(ref) + 1                    
-                    src = src - attachedBias;
-                    dst = dst + attachedBias;
+            attached.id = length(ref) + 1;
+            attached.bias = [0, 0, 0];
+            for cnt4 = idx'     
+                for cnt5 = 2:length(mag.safePts)
+                    if mag.safePts(cnt5 - 1) < cnt4 && mag.safePts(cnt5) > cnt4
+                        src.pts = mag.safePts(cnt5 - 1);
+                        dst.pts = mag.safePts(cnt5);
+                        break;
+                    end
                 end
-                
-                src = quatrotate(quatinv(q), src);                                       
-                inferred = quatrotate(cumQ, src);
-                
-                diff = mean(dst - inferred);
-                err = sqrt(sum((refSet - diff).^2, 2));                
-                err(end + 1) = sqrt(sum(mean(dst - 2 * attachedBias - inferred).^2));
-%                 err(end + 1) = sqrt(sum(diff.^2));
 
-                [~, identified] = sort(err, 'ascend');                
-                identified = ceil(identified / params.ref.nSub);  
-                
-                
+                src.mag = mag.calibrated(src.pts, :) - attached.bias;
+                src.q = gyro.cumQ(src.pts, :);
+
+                dst.mag = mag.calibrated(dst.pts, :);
+                dst.q = gyro.cumQ(dst.pts, :);
+
+                src.rotated = quatrotate(quatinv(src.q), src.mag);
+                src.rotated = quatrotate(dst.q, src.rotated);
+
+                diff = dst.mag - src.rotated;
+                err = sqrt(sum((refSet - diff).^2, 2));
+                err(end + 1) = sqrt(sum(diff.^2));
+
+                [~, identified] = sort(err);
+                identified = ceil(identified / params.ref.nSub);
+
                 if identified(1) == length(ref) + 1
-                    cur.details(cnt4) = -1;
+                    if attached.id == length(ref) + 1
+                        cur.details(cnt4) = -1;
+                    else
+                        cur.details(cnt4) = identified(1);
+                    end
+
+                    attached.id = identified(1);
+                    attached.bias = [0, 0, 0];
                 else
                     identified(identified == length(ref) + 1) = [];                
-                    identified([ref(identified).isChargeable] ~= result(cnt).isChargeable) = [];                    
-                    identified = identified(1);                                        
-                                    
-                    if attached == length(ref) + 1 && identified ~= length(ref) + 1
+                    identified([ref(identified).isChargeable] ~= result(cnt).isChargeable) = [];
+                    identified = identified(1);
+
+                    if attached.id == length(ref) + 1
                         cur.details(cnt4) = identified;
-                        attached = identified;
-                        attachedBias = diff;
-                    elseif attached ~= length(ref) + 1 && attached == identified
-                        cur.details(cnt4) = length(ref) + 1;
-                        attached = length(ref) + 1;
-                        attachedBias = [0, 0, 0];
+                        attached.id = identified;
+                        attached.bias = mean(ref(attached.id).feature);
                     else
                         cur.details(cnt4) = -1;
                     end
                 end
-                
-                    
-                
-%                 if identified == attached 
-%                     % False positive if an accessory is not newly attached or detached
-%                     cur.details(cnt4) = -1;
-%                 elseif attached ~= length(ref) + 1 && identified ~= length(ref) + 1
-%                     % False positive if an attach event is detected without detaching the existing one
-%                     cur.details(cnt4) = -1;
-%                 else
-%                     % Attach or detach events! 
-%                     cur.details(cnt4) = identified;
-%                     attached = identified;
-%                     
-%                     if attached ~= length(ref) + 1
-%                         attachedBias = diff;
-%                     end
-%                 end
+
+%                 disp(identified(1))
+%                 disp('=========')
             end
         end
         result(cnt).trial(cnt2).identify = cur;
@@ -127,18 +114,3 @@ for cnt = 1:length(result)
         title(result(cnt).name)
     end
 end
-
-% dId = 10;
-% tId = 1;
-% cur = feature(dId).trial(tId).identify;
-% 
-% subplot(size(cur, 1) + 1, 1, 1)
-% plot(result(dId).trial(tId).identify.details)
-% 
-% for cnt = 1:size(cur, 1)
-%     subplot(size(cur, 1) + 1, 1, cnt + 1)
-%     plot(cur(cnt, :))
-%     if cnt < size(cur, 1)
-%         title([data(dId).name, ' w/ ', ref(cnt).name]);
-%     end
-% end

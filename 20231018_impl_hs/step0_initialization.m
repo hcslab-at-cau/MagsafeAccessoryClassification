@@ -5,7 +5,7 @@ global params;
 params = struct();
 params.data.newApp = true;
 % params.data.path = '../Data/Inside_dataset/Jaemin7';
-% params.data.postfix = char({'208'});
+% params.data.postfix = char({'310'});
 
 % params.data.path = '../Data/Outside_dataset/Jaemin7';
 % params.data.postfix = char({'bus'});
@@ -69,6 +69,12 @@ end
 
 %% Load reference feature data
 params.ref.path = 'features/Jaemin8_p2p.mat';
+<<<<<<< HEAD
+=======
+params.ref.nData = 50;
+params.ref.nSub = 1;
+params.ref.nSubData = floor(params.ref.nData / (params.ref.nSub));
+>>>>>>> 9f35708a9e1fe6396ea286e861bb31fbbcb2d7ad
 
 load(params.ref.path);
 ref = feature;

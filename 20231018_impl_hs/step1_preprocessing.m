@@ -15,7 +15,7 @@ params.pre.movWinSize = params.data.rate * .4;
 params.pre.cRange = 1:params.data.rate * 5; % For raw magnetometer calibration
 
 feature = struct();
-for cnt = 1:length(data)
+for cnt = 1:params.data.nObjects
     for cnt2 = 1:length(data(cnt).trial)
         for cnt3 = 1:length(params.data.sensors)
             sensor = char(params.data.sensors(cnt3));
@@ -41,14 +41,10 @@ for cnt = 1:length(data)
                     cur.magnitude = sqrt(sum(filtfilt(params.pre.fHB, params.pre.fHA, cur.calibrated).^2, 2));                     
             end
             
-            if params.data.newApp == false
-                cur.rmag = cur.mag;
-            end
-            
             feature(cnt).trial(cnt2).(sensor) = cur;
         end
         
-        feature(cnt).trial(cnt2).detect = data(cnt).trial(cnt2).detect;
+        feature(cnt).trial(cnt2).event = data(cnt).trial(cnt2).event;
     end
 end
 toc

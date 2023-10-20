@@ -3,7 +3,7 @@ params.identify.testMargin = params.data.rate * 3;
 
 params.identify.searchRange = params.data.rate * .75;
 params.identify.featureRange = params.data.rate * .1;
-
+params.identify.prc = [10, 90];
 
 params.identify.nTotal = length(data(1).trial);
 params.identify.nTrain = params.identify.nTotal * 0.5;
@@ -59,32 +59,9 @@ for cnt = 1:length(result)
             % Intially nothing attached
             attached.id = length(ref) + 1;
             attached.bias = [0, 0, 0];
-            for cnt4 = idx'                          
-                [~, src.pts]= min(mag.mean(cnt4 + (-params.identify.searchRange:-1)));
-                src.pts = src.pts + (cnt4 - params.identify.searchRange + 1);
-                src.pts = src.pts + (-params.identify.featureRange:params.identify.featureRange);
-                
-                [~, dst.pts]= min(mag.mean(cnt4 + (1:params.identify.searchRange)));
-                dst.pts = dst.pts + cnt4;
-                dst.pts = dst.pts + (-params.identify.featureRange:params.identify.featureRange);
-
-                src.mag = mag.calibrated(src.pts, :) - attached.bias;
-                src.q = gyro.cumQ(src.pts, :);
-
-                dst.mag = mag.calibrated(dst.pts, :);
-                dst.q = gyro.cumQ(dst.pts, :);
-
-                diff = [];
-                for cnt5 = 1:length(src.pts)
-                    rotated = quatrotate(quatinv(src.q(cnt5, :)), src.mag(cnt5, :));
-                    rotated = quatrotate(dst.q, rotated);
-                    
-                    diff = [diff; dst.mag - rotated];
-                end
-                
-                diff = rmoutliers(diff, 'percentiles', [10, 90]);                
-                diff = mean(diff);
-                               
+            for cnt4 = idx'        
+                diff = func_compute_bias(mag, gyro, attached.bias, cnt4, ...
+                    params.identify.searchRange, params.identify.featureRange, params.identify.prc);                               
 
                 err = sqrt(sum((refSet - diff).^2, 2));
                 err(end + 1) = sqrt(sum(diff.^2));

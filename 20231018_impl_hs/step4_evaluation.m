@@ -41,11 +41,19 @@ summary.nTest = zeros(length(result) + 1, 1);
 
 for cnt = 1:length(result)
     for cnt2 = 1:length(result(cnt).trial)
-        summary.dAcc(cnt, :) = summary.dAcc(cnt, :) + ...
-            sum(result(cnt).trial(cnt2).eval.isDetected);
+        if summary.nTest > 1        
+            summary.dAcc(cnt, :) = summary.dAcc(cnt, :) + ...
+                sum(result(cnt).trial(cnt2).eval.isDetected);
 
-        summary.iAcc(cnt, :) = summary.iAcc(cnt, :) + ...
-            sum(result(cnt).trial(cnt2).eval.isIdentified);
+            summary.iAcc(cnt, :) = summary.iAcc(cnt, :) + ...
+                sum(result(cnt).trial(cnt2).eval.isIdentified);
+        else
+            summary.dAcc(cnt, :) = summary.dAcc(cnt, :) + ...
+                result(cnt).trial(cnt2).eval.isDetected;
+
+            summary.iAcc(cnt, :) = summary.iAcc(cnt, :) + ...
+                result(cnt).trial(cnt2).eval.isIdentified;
+        end
 
         summary.nTest(cnt) = summary.nTest(cnt) + result(cnt).trial(cnt2).eval.nTest;
     end

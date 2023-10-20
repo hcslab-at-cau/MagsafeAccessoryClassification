@@ -31,11 +31,10 @@ for cnt = 1:length(data)
                 case {'mag', 'rmag'} 
                     % Do calication
                     [cur.raw, cur.calibrated, cur.A, cur.B] = ...
-                        func_calib_mag(sample, strcmp(sensor, 'rmag'), params.pre.cRange);
+                        func_calib_mag(sample, data(cnt).trial(cnt2).(sensor).calSample, strcmp(sensor, 'rmag'));
                     
                     % Compare the calibrated samples and the inferred samples
                     [cur.diff, cur.inferred] = func_calc_diff(cur.calibrated, feature(cnt).trial(cnt2).gyro.q);
-%                     cur.lpf = filtfilt(params.pre.fLB, params.pre.fLA, cur.diff);
                     cur.mean = movmean(cur.diff, params.pre.movWinSize);
 
                     % Extract the magnitude of high-pass filtered samples  
@@ -45,10 +44,11 @@ for cnt = 1:length(data)
             if params.data.newApp == false
                 cur.rmag = cur.mag;
             end
-
+            
             feature(cnt).trial(cnt2).(sensor) = cur;
         end
-
+        
+        feature(cnt).trial(cnt2).detect = data(cnt).trial(cnt2).detect;
     end
 end
 toc

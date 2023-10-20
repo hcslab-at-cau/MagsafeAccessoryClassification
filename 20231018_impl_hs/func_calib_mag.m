@@ -1,12 +1,10 @@
-function [raw, calibrated, A, B] = func_calib_mag(raw, isRaw, cRange, A, B)
+function [raw, calibrated, A, B] = func_calib_mag(raw, calib, isRaw)
 
-if nargin < 4
-    if isRaw == true
-        [A, B, ~] = magcal(raw(cRange, :));
-    else
-        A = 1;
-        B = 0;
-    end
+if isRaw == true
+    [A, B, ~] = magcal(calib);
+else
+    A = 1;
+    B = 0;
 end
 
 calibrated = (raw - B) * A;          

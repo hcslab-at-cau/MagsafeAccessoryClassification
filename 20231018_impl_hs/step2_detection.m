@@ -2,8 +2,6 @@
 params.detect.magTh = .5;
 params.detect.diffTh = 2.5;
 
-params.detect.initRange = params.pre.cRange;
-
 params.detect.margin = params.data.rate * 0.1 * 2 + 1;
 params.detect.minDist = params.data.rate * 1;
 

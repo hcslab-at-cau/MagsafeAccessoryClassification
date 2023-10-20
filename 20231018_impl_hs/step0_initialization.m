@@ -4,8 +4,11 @@ clear;
 global params;
 params = struct();
 params.data.newApp = true;
-% params.data.path = '../Data/Inside_dataset/Jaemin7';
-% params.data.postfix = char({'208'});
+params.data.path = '../Data/Inside_dataset/Jaemin7';
+params.data.postfix = char({'208'});
+
+% params.data.path = '../Data/Outside_dataset/Jaemin7';
+% params.data.postfix = char({'bus'});
 
 params.data.path = '../Data/Default_dataset/Jaemin10';
 params.data.postfix = char({'Normal_objects', 'Holders'});
@@ -23,6 +26,13 @@ else
     data = func_timestamp_sync(data);
     
     charging = func_load_charging_status(params.data.path, params.data.postfix);
+end
+
+for cnt = 1:length(data)
+    if strcmp(data(cnt).name, 'None')
+        data(cnt) = [];
+        break;
+    end
 end
 
 %% Load reference feature data
@@ -50,3 +60,8 @@ for cnt = 1:length(ref)
         end
     end
 end
+
+step1_preprocessing
+step2_detection
+step3_identification
+step4_evaluation

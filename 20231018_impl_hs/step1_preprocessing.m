@@ -4,7 +4,7 @@ tic
 params.pre.fOrder = 4;
 params.pre.fHCut = 10;
 params.pre.fLCut = 2.5;
-params.pre.movWinSize = params.data.rate * 0.1;
+params.pre.movWinSize = params.data.rate * .4;
 
 [params.pre.fHB, params.pre.fHA] = butter(params.pre.fOrder, ...
     params.pre.fHCut/params.data.rate * 2, 'high');
@@ -35,7 +35,7 @@ for cnt = 1:length(data)
                     
                     % Compare the calibrated samples and the inferred samples
                     [cur.diff, cur.inferred] = func_calc_diff(cur.calibrated, feature(cnt).trial(cnt2).gyro.q);
-                    cur.lpf = filtfilt(params.pre.fLB, params.pre.fLA, cur.diff);
+%                     cur.lpf = filtfilt(params.pre.fLB, params.pre.fLA, cur.diff);
                     cur.mean = movmean(cur.diff, params.pre.movWinSize);
 
                     % Extract the magnitude of high-pass filtered samples  

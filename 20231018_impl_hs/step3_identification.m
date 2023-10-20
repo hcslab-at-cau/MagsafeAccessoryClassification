@@ -12,7 +12,7 @@ end
 
 tic
 for cnt = 1:length(result)
-% for cnt = 3
+% for cnt = 6
     class = find(cellfun('isempty', strfind({ref.name}, data(cnt).name)) == 0);
     if isempty(class)
         class = 0;
@@ -36,19 +36,17 @@ for cnt = 1:length(result)
             range = max(1, cur.tTest(cnt3, 1) - params.identify.testMargin): ...
                 min(length(cur.details), cur.tTest(cnt3, 2) + params.identify.testMargin);
             idx = find(cur.details(range)) + range(1) - 1;
-            
+                        
             % Intially nothing attached
             attached.id = length(ref) + 1;
             attached.bias = [0, 0, 0];
-            for cnt4 = idx'           
-                center = cnt4;
-                
-                [~, src.pts]= min(mag.mean(center + (-params.identify.searchRange:-1)));
-                src.pts = src.pts + (center - params.identify.searchRange + 1);
+            for cnt4 = idx'                          
+                [~, src.pts]= min(mag.mean(cnt4 + (-params.identify.searchRange:-1)));
+                src.pts = src.pts + (cnt4 - params.identify.searchRange + 1);
                 src.pts = src.pts + (-params.identify.featureRange:params.identify.featureRange);
                 
-                [~, dst.pts]= min(mag.mean(center + (1:params.identify.searchRange)));
-                dst.pts = dst.pts + center;
+                [~, dst.pts]= min(mag.mean(cnt4 + (1:params.identify.searchRange)));
+                dst.pts = dst.pts + cnt4;
                 dst.pts = dst.pts + (-params.identify.featureRange:params.identify.featureRange);
 
                 src.mag = mag.calibrated(src.pts, :) - attached.bias;
@@ -107,18 +105,18 @@ end
 toc
 
 %% Plotting detection results
-figure(1)
-clf
-nRow = length(result);
-nCol = length(result(1).trial);
-for cnt = 1:length(result)
-    for cnt2 = 1:length(result(cnt).trial)
-        cur = result(cnt).trial(cnt2).identify;
-        subplot(nRow, nCol, (cnt - 1) * nCol + cnt2)
-        hold on
-        plot(cur.details)
-        plot(ones(1, length(cur.details)) * result(cnt).class)
-        plot(ones(1, length(cur.details)) * length(ref) + 1)
-        title(result(cnt).name)
-    end
-end
+% figure(1)
+% clf
+% nRow = length(result);
+% nCol = length(result(1).trial);
+% for cnt = 1:length(result)
+%     for cnt2 = 1:length(result(cnt).trial)
+%         cur = result(cnt).trial(cnt2).identify;
+%         subplot(nRow, nCol, (cnt - 1) * nCol + cnt2)
+%         hold on
+%         plot(cur.details)
+%         plot(ones(1, length(cur.details)) * result(cnt).class)
+%         plot(ones(1, length(cur.details)) * length(ref) + 1)
+%         title(result(cnt).name)
+%     end
+% end

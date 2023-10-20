@@ -35,7 +35,6 @@ for cnt = 1:length(data)
                     
                     % Compare the calibrated samples and the inferred samples
                     [cur.diff, cur.inferred] = func_calc_diff(cur.calibrated, feature(cnt).trial(cnt2).gyro.q);
-%                     cur.lpf = filtfilt(params.pre.fLB, params.pre.fLA, cur.diff);
                     cur.mean = movmean(cur.diff, params.pre.movWinSize);
 
                     % Extract the magnitude of high-pass filtered samples  

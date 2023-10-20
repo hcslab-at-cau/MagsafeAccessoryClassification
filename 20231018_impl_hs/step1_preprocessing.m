@@ -2,10 +2,15 @@
 tic
 % Filter parameters for magnetometer
 params.pre.fOrder = 4;
-params.pre.fCut = 10;
+params.pre.fHCut = 10;
+params.pre.fLCut = 2.5;
+params.pre.movWinSize = params.data.rate * .4;
 
-[params.pre.fB, params.pre.fA] = butter(params.pre.fOrder, ...
-    params.pre.fCut/params.data.rate * 2, 'high');
+[params.pre.fHB, params.pre.fHA] = butter(params.pre.fOrder, ...
+    params.pre.fHCut/params.data.rate * 2, 'high');
+
+[params.pre.fLB, params.pre.fLA] = butter(params.pre.fOrder, ...
+    params.pre.fLCut/params.data.rate * 2, 'low');
 
 params.pre.cRange = 1:params.data.rate * 5; % For raw magnetometer calibration
 
@@ -29,43 +34,21 @@ for cnt = 1:length(data)
                         func_calib_mag(sample, strcmp(sensor, 'rmag'), params.pre.cRange);
                     
                     % Compare the calibrated samples and the inferred samples
-                    [cur.diff, cur.inferred] = func_calc_diff(cur.calibrated, feature(cnt).trial(cnt2).detect.gyro.q);
+                    [cur.diff, cur.inferred] = func_calc_diff(cur.calibrated, feature(cnt).trial(cnt2).gyro.q);
+%                     cur.lpf = filtfilt(params.pre.fLB, params.pre.fLA, cur.diff);
+                    cur.mean = movmean(cur.diff, params.pre.movWinSize);
 
                     % Extract the magnitude of high-pass filtered samples  
-                    cur.magnitude = sqrt(sum(filtfilt(params.pre.fB, params.pre.fA, sample).^2, 2)); 
+                    cur.magnitude = sqrt(sum(filtfilt(params.pre.fHB, params.pre.fHA, cur.calibrated).^2, 2));                     
             end
             
             if params.data.newApp == false
                 cur.rmag = cur.mag;
             end
 
-            feature(cnt).trial(cnt2).detect.(sensor) = cur;
+            feature(cnt).trial(cnt2).(sensor) = cur;
         end
 
-    end
-end
-toc
-
-%% Extract features used for identification
-params.pre.mType = 'rmag';
-
-tic
-for cnt = 1:length(data)
-    for cnt2 = 1:length(data(cnt).trial)
-        mag = feature(cnt).trial(cnt2).detect.(params.pre.mType);
-
-        idx = 1;
-        feature(cnt).trial(cnt2).identify = zeros(length(ref) * params.ref.nSub + 1, length(mag.raw));
-        for cnt3 = 1:length(ref)
-            for cnt4 = 1:params.ref.nSub
-                % Compute diff after calibrating with reference data
-                calibrated = (mag.raw - ref(cnt3).feature(cnt4, :) - mag.B) * mag.A;
-                feature(cnt).trial(cnt2).identify(idx, :) = ...
-                    func_calc_diff(calibrated, feature(cnt).trial(cnt2).detect.gyro.q);
-                idx = idx + 1;
-            end
-        end
-        feature(cnt).trial(cnt2).identify(end, :) = mag.diff;
     end
 end
 toc

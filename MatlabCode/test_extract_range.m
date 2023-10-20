@@ -1,6 +1,6 @@
 clear exp;
 
-accId = 6;
+accId = 10;
 showTrials = 1:2;
 
 wSize = 100;
@@ -171,7 +171,7 @@ for cnt = 1:length(showTrials)
 end
 %% Function for get Diff graphs
 function [diff, diff1s] = func_get_diff(mag, gyro, range, status)
-% status == true means original else revserse
+% status == true means attach else revserse
 
 diff = zeros(length(range), 3);
 diff1s = zeros(length(range), 3);

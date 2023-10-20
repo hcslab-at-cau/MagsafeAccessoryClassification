@@ -1,5 +1,5 @@
 clear exp
-accId = 6;
+accId = 10;
 trialId = 1;
 wSize = 100;
 rate = 100;
@@ -106,9 +106,8 @@ for t = start + 1:5:length(mag.sample)
         % [featureValue, inferredMag] = func_extract_feature((rmag.rawSample-bias)*calm, gyro.sample, extractRange, 4, rate);
         extractedRange = func_extract_range(mag.sample, gyro, extractRange, refPoint);
 
-        [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractedRange, 1, accessoryStatus);
+        [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractedRange, accessoryStatus);
     
-        
         [~, distance] = knnsearch(featureMatrix.data, featureValue, 'K', 7, 'Distance', 'euclidean');
 
         if accessoryStatus
@@ -117,12 +116,13 @@ for t = start + 1:5:length(mag.sample)
             s = 'detached';
         end
 
-        disp(['Check for distance!  accessory is ', s])
+        disp(['Check distance!  accessory is ', s])
         disp(['Mean distance : ', num2str(mean(distance))])
         disp(['feature : ' ...
             num2str(featureValue(1)), ', ', num2str(featureValue(2)), ', ', ...
             num2str(featureValue(3))])
         disp(['refPoint : ', num2str(refPoint)])
+        disp(['extractedRange : ' num2str(extractedRange(1)), '-', num2str(extractedRange(end))])
 
         % if (accessoryStatus == false && mean(distance) < distanceThreshold) || (accessoryStatus == true)
         if mean(distance) < distanceThreshold
@@ -132,7 +132,7 @@ for t = start + 1:5:length(mag.sample)
             label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
 
             disp(['Prob ', cell2mat(preds), '  label : ', cell2mat(label)])
-
+            
             indices = ismember(featureMatrix.label, label);
 
             [~, distance] = knnsearch(featureMatrix.data(indices, :), featureValue, 'K', 7, 'Distance', 'euclidean');

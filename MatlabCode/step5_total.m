@@ -50,7 +50,7 @@ parfor cnt = 1:length(data)
         acc = tmp.acc;
         gyro = tmp.gyro;
 
-        accessoryStatus = false; % Detach : false, Attach : truez
+        accessoryStatus = false; % Detach : false, Attach : true
         refPoint = -1; % reference point : detection points that has maximum value of magnitude
         curPoints = []; 
         prevPoints = [];
@@ -107,7 +107,7 @@ parfor cnt = 1:length(data)
                 extractRange = func_extract_range(mag.sample, gyro, extractRange, refPoint);
 
                 % knnsearch for remove false-positive
-                [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractRange, 1, accessoryStatus);
+                [featureValue, ~] = func_extract_feature(mag.sample, gyro.sample, extractRange, accessoryStatus);
 
                 [preds, scores] = predict(mdl, featureValue);
                 probs = exp(scores) ./ sum(exp(scores),2);
@@ -119,12 +119,6 @@ parfor cnt = 1:length(data)
                 [~, distance] = knnsearch(featureMatrix.data(indices, :), featureValue, 'K', 7, 'Distance', 'euclidean');
         
                 if mean(distance) < distanceThreshold
-                    % [preds, scores] = predict(mdl, featureValue);
-                    % probs = exp(scores) ./ sum(exp(scores),2);
-                    % 
-                    % % Consider charing status
-                    % label = func_predict({accName}, preds, probs, totalAcc, chargingAcc);
-                    
                     accessoryStatus = ~accessoryStatus;
                     cur(cnt3).detect = refPoint;
                     cur(cnt3).feature = featureValue;

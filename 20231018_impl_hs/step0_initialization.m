@@ -5,15 +5,20 @@ global params;
 params = struct();
 params.data.newApp = true;
 params.data.path = '../Data/Inside_dataset/Jaemin7';
-params.data.postfix = char({'310'});
+params.data.postfix = char({'208'});
 
-% params.data.path = '../Data/Default_dataset/Jaemin10';
-% params.data.postfix = char({'Normal_objects', 'Holders'});
+% params.data.path = '../Data/Outside_dataset/Jaemin7';
+% params.data.postfix = char({'bus'});
+
+params.data.path = '../Data/Default_dataset/Jaemin10';
+params.data.postfix = char({'Normal_objects', 'Holders'});
 
 params.data.sensors = {'gyro', 'mag'};
 params.data.rate = 100;
+params.data.mType = 'rmag';
 
 if params.data.newApp == false
+    params.data.mType = 'mag';
     data = func_load_data(params.data.path, params.data.postfix);
 else
     params.data.sensors = [params.data.sensors, 'rmag'];
@@ -23,10 +28,17 @@ else
     charging = func_load_charging_status(params.data.path, params.data.postfix);
 end
 
+for cnt = 1:length(data)
+    if strcmp(data(cnt).name, 'None')
+        data(cnt) = [];
+        break;
+    end
+end
+
 %% Load reference feature data
 params.ref.path = 'features/Jaemin8_p2p.mat';
 params.ref.nData = 50;
-params.ref.nSub = 5;
+params.ref.nSub = 50;
 params.ref.nSubData = floor(params.ref.nData / (params.ref.nSub));
 
 load(params.ref.path);
@@ -48,3 +60,8 @@ for cnt = 1:length(ref)
         end
     end
 end
+
+step1_preprocessing
+step2_detection
+step3_identification
+step4_evaluation

@@ -1,0 +1,124 @@
+%% Identify MagSafe accessories
+params.identify.testMargin = params.data.rate * 3;
+
+params.identify.searchRange = params.data.rate * .75;
+params.identify.featureRange = params.data.rate * .1;
+
+
+refSet = [];
+for cnt = 1:length(ref)
+    refSet = [refSet; ref(cnt).feature];
+end
+
+tic
+for cnt = 1:length(result)
+% for cnt = 3
+    class = find(cellfun('isempty', strfind({ref.name}, data(cnt).name)) == 0);
+    if isempty(class)
+        class = 0;
+    end
+    result(cnt).name = data(cnt).name;
+    result(cnt).class = class;
+    result(cnt).isChargeable = func_isChargeable(result(cnt).name);
+
+    for cnt2 = 1:length(result(cnt).trial)
+%     for cnt2 = 2
+        cur = struct();        
+        cur.tTest = data(cnt).trial(cnt2).detect.sample;
+        cur.tTest = reshape(cur.tTest, 2, length(cur.tTest)/2)';
+        cur.details = double(result(cnt).trial(cnt2).detect.all);
+
+        mag = feature(cnt).trial(cnt2).rmag;      
+
+        gyro = feature(cnt).trial(cnt2).gyro;        
+        % Perform individual tests for each attach-detach pair
+        for cnt3 = 1:size(cur.tTest, 1)
+            range = max(1, cur.tTest(cnt3, 1) - params.identify.testMargin): ...
+                min(length(cur.details), cur.tTest(cnt3, 2) + params.identify.testMargin);
+            idx = find(cur.details(range)) + range(1) - 1;
+            
+            % Intially nothing attached
+            attached.id = length(ref) + 1;
+            attached.bias = [0, 0, 0];
+            for cnt4 = idx'           
+                center = cnt4;
+                
+                [~, src.pts]= min(mag.mean(center + (-params.identify.searchRange:-1)));
+                src.pts = src.pts + (center - params.identify.searchRange + 1);
+                src.pts = src.pts + (-params.identify.featureRange:params.identify.featureRange);
+                
+                [~, dst.pts]= min(mag.mean(center + (1:params.identify.searchRange)));
+                dst.pts = dst.pts + center;
+                dst.pts = dst.pts + (-params.identify.featureRange:params.identify.featureRange);
+
+                src.mag = mag.calibrated(src.pts, :) - attached.bias;
+                src.q = gyro.cumQ(src.pts, :);
+
+                dst.mag = mag.calibrated(dst.pts, :);
+                dst.q = gyro.cumQ(dst.pts, :);
+
+                diff = [];
+                for cnt5 = 1:length(src.pts)
+                    rotated = quatrotate(quatinv(src.q(cnt5, :)), src.mag(cnt5, :));
+                    rotated = quatrotate(dst.q, rotated);
+                    
+                    diff = [diff; dst.mag - rotated];
+                end
+                
+                diff = rmoutliers(diff, 'percentiles', [10, 90]);                
+                diff = mean(diff);
+                               
+
+                err = sqrt(sum((refSet - diff).^2, 2));
+                err(end + 1) = sqrt(sum(diff.^2));
+ 
+                [~, identified] = sort(err);
+                identified = ceil(identified / params.ref.nSub);
+ 
+                if identified(1) == length(ref) + 1
+                    if attached.id == length(ref) + 1
+                        cur.details(cnt4) = -1;
+                    else
+                        cur.details(cnt4) = identified(1);
+                        attached.id = identified(1);
+                        attached.bias = diff;
+                    end
+                else
+                    identified(identified == length(ref) + 1) = [];                
+                    identified([ref(identified).isChargeable] ~= result(cnt).isChargeable) = [];
+                    identified = identified(1);
+
+                    if attached.id == length(ref) + 1
+                        cur.details(cnt4) = identified;
+                        attached.id = identified;
+                        attached.bias = diff;
+                    else
+                        cur.details(cnt4) = -1;
+                    end
+                end
+
+%                 disp(diff)
+%                 disp('=========')
+            end
+        end
+        result(cnt).trial(cnt2).identify = cur;
+    end
+end
+toc
+
+%% Plotting detection results
+figure(1)
+clf
+nRow = length(result);
+nCol = length(result(1).trial);
+for cnt = 1:length(result)
+    for cnt2 = 1:length(result(cnt).trial)
+        cur = result(cnt).trial(cnt2).identify;
+        subplot(nRow, nCol, (cnt - 1) * nCol + cnt2)
+        hold on
+        plot(cur.details)
+        plot(ones(1, length(cur.details)) * result(cnt).class)
+        plot(ones(1, length(cur.details)) * length(ref) + 1)
+        title(result(cnt).name)
+    end
+end

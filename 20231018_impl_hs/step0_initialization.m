@@ -4,14 +4,14 @@ clear;
 global params;
 params = struct();
 params.data.newApp = true;
-% params.data.path = '../Data/Inside_dataset/Jaemin7';
-% params.data.postfix = char({'208'});
+params.data.path = '../Data/Inside_dataset/Jaemin8';
+params.data.postfix = char({'208'});
 
 % params.data.path = '../Data/Outside_dataset/Jaemin7';
 % params.data.postfix = char({'bus'});
 
-params.data.path = '../Data/Default_dataset/Jaemin10';
-params.data.postfix = char({'Normal_objects', 'Holders'});
+% params.data.path = '../Data/Default_dataset/Jaemin10';
+% params.data.postfix = char({'Normal_objects', 'Holders'});
 
 params.data.sensors = {'gyro', 'mag', 'rmag'};
 params.data.rate = 100;

@@ -1,4 +1,4 @@
-function result = new_load_data(root,postfix)
+function result = func_load_new_data(root,postfix)
 
 % Sensor list
 dataList = {'acc', 'detect', 'gyro', 'mag', 'rmag', 'time', 'timeRaw'};
@@ -15,7 +15,6 @@ for cnt = 1:size(postfix, 1)
     path.data = [path.root '/', path.postfix, '/'];
     
     % Data path for each accessory
-    disp(path.data)
     path.accessory = dir(path.data);
     path.accessory(~[path.accessory(:).isdir]) = [];
     path.accessory(ismember({path.accessory(:).name}, {'.', '..'})) = [];

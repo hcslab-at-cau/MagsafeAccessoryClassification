@@ -4,13 +4,16 @@ clear;
 global params;
 params = struct();
 params.data.newApp = true;
-% params.data.path = '../Data/Inside_dataset/Jaemin8';
-% params.data.postfix = char({'310'});
+% params.data.path = '../Data/Inside/1';
+% params.data.postfix = char({'208'});
 
-% params.data.path = '../Data/Outside_dataset/Jaemin7';
-% params.data.postfix = char({'bus'});
+% params.data.path = '../Data/PublicTransport/1';
+% params.data.postfix = char({'subway'});
 
-params.data.path = '../Data/Default_dataset/1';
+% params.data.path = '../Data/Mobility/1';
+% params.data.postfix = char({'Stair'});
+ 
+params.data.path = '../Data/Default/1';
 params.data.postfix = char({'Normal_objects', 'Holders'});
 
 params.data.sensors = {'gyro', 'mag', 'rmag'};
@@ -21,12 +24,9 @@ ori = func_timestamp_sync(ori);
     
 charging = func_load_charging_status(params.data.path, params.data.postfix);
 
-for cnt = 1:length(ori)
-    if strcmp(ori(cnt).name, 'None')
-        ori(cnt) = [];
-        break;
-    end
-end
+names = {ori.name};
+% ori(strcmp(names, 'None') | strcmp(names, 'charger3') | strcmp(names, 'wallet5')) = [];
+ori(strcmp(names, 'None') | strcmp(names, 'wallet3') | strcmp(names, 'wallet5')) = [];
 
 %% Divide data into events
 params.data.nObjects = length(ori);
@@ -63,7 +63,7 @@ for cnt = 1:params.data.nObjects
 end
 
 %% Load reference feature data
-params.ref.path = 'features/ref_p2p.mat';
+params.ref.path = 'features/ref_new.mat';
 params.ref.self = false;
 
 load(params.ref.path);

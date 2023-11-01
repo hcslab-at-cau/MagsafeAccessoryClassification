@@ -10,7 +10,6 @@ for cnt = 1:size(postfix, 1)
     path.data = [path.root '/', path.postfix, '/'];
     
     % Data path for each accessory
-    disp(path.data)
     path.accessory = dir(path.data);
     path.accessory(~[path.accessory(:).isdir]) = [];
     path.accessory(ismember({path.accessory(:).name}, {'.', '..'})) = [];
@@ -19,7 +18,6 @@ for cnt = 1:size(postfix, 1)
         files = dir([path.data, path.accessory(cnt2-prevCnt).name, '/**/*.csv']);
 
         if isempty(find(contains({files(:).name}, 'Charging'), 1))
-            disp(path.accessory(cnt2-prevCnt).name)
             continue
         end
         

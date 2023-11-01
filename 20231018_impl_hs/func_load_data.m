@@ -14,7 +14,6 @@ for cnt = 1:size(postfix, 1)
     path.data = [path.root '/', path.postfix, '/'];
     
     % Data path for each accessory
-    disp(path.data)
     path.accessory = dir(path.data);
     path.accessory(~[path.accessory(:).isdir]) = [];
     path.accessory(ismember({path.accessory(:).name}, {'.', '..'})) = [];

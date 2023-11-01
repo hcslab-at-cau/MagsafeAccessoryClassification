@@ -12,7 +12,7 @@ params.identify.featureRange = params.data.rate * .1;
 params.identify.prc = [10, 90];
 
 params.identify.nTotal = length(data(1).trial);
-params.identify.nTrain = params.identify.nTotal * 0.5;
+params.identify.nTrain = params.identify.nTotal * 0.2;
 params.identify.nTest = params.identify.nTotal - params.identify.nTrain;
 
 if params.ref.self 

@@ -4,17 +4,20 @@ clear;
 global params;
 params = struct();
 params.data.newApp = true;
-% params.data.path = '../Data/Inside/1';
-% params.data.postfix = char({'208'});
+% params.data.path = '../Data/ElectronicDevice/1';
+% params.data.postfix = char({'Laptop'});
 
 % params.data.path = '../Data/PublicTransport/1';
-% params.data.postfix = char({'subway'});
+% params.data.postfix = char({'bus'});
 
 % params.data.path = '../Data/Mobility/1';
-% params.data.postfix = char({'Stair'});
- 
-params.data.path = '../Data/Default/1';
-params.data.postfix = char({'Normal_objects', 'Holders'});
+% params.data.postfix = char({'ground'});
+
+params.data.path = '../Data/Inside/1';
+params.data.postfix = char({'310'});
+
+% params.data.path = '../Data/Default/1';
+% params.data.postfix = char({'Normal_objects', 'Holders'});
 
 params.data.sensors = {'gyro', 'mag', 'rmag'};
 params.data.rate = 100;
@@ -26,7 +29,11 @@ charging = func_load_charging_status(params.data.path, params.data.postfix);
 
 names = {ori.name};
 % ori(strcmp(names, 'None') | strcmp(names, 'charger3') | strcmp(names, 'wallet5')) = [];
-ori(strcmp(names, 'None') | strcmp(names, 'wallet3') | strcmp(names, 'wallet5')) = [];
+ori(strcmp(names, 'None') | strcmp(names, 'wallet3') | strcmp(names, 'holder3')) = [];
+
+o = struct2table(ori);
+o = sortrows(o, 'name');
+ori = table2struct(o);
 
 %% Divide data into events
 params.data.nObjects = length(ori);
@@ -74,6 +81,10 @@ for cnt = 1:params.data.nObjects
     ref(cnt).raw = ref(cnt).feature;   
     ref(cnt).isChargeable = func_isChargeable(ref(cnt).name);
 end
+
+rt = struct2table(ref);
+rt = sortrows(rt, 'name');
+ref = table2struct(rt);
 
 step1_preprocessing
 step2_2_identification

@@ -1,5 +1,7 @@
 %% Evaluate detection & identification results
 params.eval.accMargin = params.data.rate * 3;
+m = zeros(length(ref), length(ref));
+acc = {ref.name};
 
 for cnt = 1:length(result.trial)
     test = result.trial(cnt);
@@ -8,8 +10,9 @@ for cnt = 1:length(result.trial)
     cur.nEvent = size(test.event, 1);
     cur.isDetected = false(cur.nEvent, 2);
     cur.isIdentified = false(cur.nEvent, 2);
+    cAcc = find(ismember(acc, test.name));
 
-    for cnt2 = 1:cur.nEvent
+    for cnt2 = 1:cur.nEvent % Almostly 1
         for cnt3 = 1:2
             % Check time instants from ground truth - 3s to ground truth
             range = max(1, test.event(cnt2, cnt3) - params.eval.accMargin):...
@@ -18,6 +21,14 @@ for cnt = 1:length(result.trial)
             % If any kind of event was detected
             if sum(test.detect.all(range) ~= 0) > 0
                 cur.isDetected(cnt2, cnt3) = true;
+
+                if cnt3 == 1 && sum(test.identify.id(range) ~= 0) > 0
+                    idx = find(test.identify.id(range));
+                    v = test.identify.id(range(idx));
+                    v = v(v > 0);
+
+                    m(cAcc, v) = m(cAcc, v) + 1;
+                end
 
                 % If correctly identified
                 if (cnt3 == 1 && sum(test.identify.id(range) == test.class) > 0) || ...
@@ -65,3 +76,8 @@ colNames = {'Detection (A)', 'Detection (D)', 'Identification (A)', 'Identificat
 disp(array2table([summary.dAcc, summary.iAcc], ...
     'VariableNames', colNames, ...
     'RowNames', rowNames))
+
+
+%% Confusion matrix
+figure(2)
+cm = confusionchart(m, {ref.name});

@@ -2,14 +2,16 @@ clear;
 
 newApp = true;
 path = '../Data/';
-% datasetName = 'Mobility_dataset';
-datasetName = 'Outside_dataset';
-folderName = 'Jaemin7';
+% datasetName = 'Mobility';
+% datasetName = 'Publictransport';
+% datasetName = 'ElectronicDevice';
+datasetName = 'Inside';
+folderName = '1';
 
 path = [path, datasetName, '/', folderName];
 
 % c = {'Normal_objects', 'Holders'};
-c = {'bus'};
+c = {'310'};
 postfix = char(c);
 
 if newApp == false
@@ -56,8 +58,10 @@ accNames= {data.name};
 objNames = {objectFeature.name};
 
 % objectFeature(~ismember(objNames, accNames)) = [];
+exclude = {'wallet3', 'holder3'};
+data(ismember({data.name}, exclude)) = [];
 
 run('step1_preprocessing.m')
-% run('step2_detection.m')
-% run('step2_detection_evaluation.m')
+run('step2_detection.m')
+run('step2_detection_evaluation.m')
 % run('step3_feature_extraction_ground_truth.m')    

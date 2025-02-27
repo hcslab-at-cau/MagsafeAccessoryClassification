@@ -133,8 +133,6 @@ if isempty(find(filter5))
 end
 
 
-
-
 result = true;
 detectPoints = find(filter5)' + range(1) - 1;
 end

@@ -433,10 +433,10 @@ xticklabels(dirs);
 title('average accuracy')
 %% 
 
-featureName = 'jaemin9_p2p';
+featureName = 'ref_p2p';
 
 prefix.train = featureName;
-prefix.test  = 'jaemin9_p2p';
+prefix.test  = featureName;
 nTrainCur = 25;
 
 train = func_load_feature(prefix.train);
@@ -447,7 +447,7 @@ test = func_load_feature(prefix.test);
 options = struct("Optimizer","asha","UseParallel",true);
 mdl = fitcauto(featureMatrix.train.data, featureMatrix.train.label, "HyperparameterOptimizationOptions",options);
 
-chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
+chargingAcc = {'batterypack1', 'charger1', 'charger2','charger3','holder2', 'holder3', 'holder4'};
 [preds, scores] = predict(mdl,featureMatrix.test.data);
 probs = exp(scores) ./ sum(exp(scores),2);
 YPred = func_predict(featureMatrix.test.label, preds, probs, chargingAcc);

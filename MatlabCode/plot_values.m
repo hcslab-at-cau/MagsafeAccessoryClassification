@@ -1,8 +1,8 @@
 figure(8)
 clf
 
-accId = 11;
-showTrials = 1:2;
+accId = 13;
+showTrials = 1:4;
 
 nCol = length(showTrials);
 nRow = 3;
@@ -17,8 +17,8 @@ for cnt = 1:length(showTrials)
     [calm, bias, ~] = magcal(mag.rawSample(1:500, :));
     mag.sample = (mag.rawSample-bias)*calm;
 
-    refMag = mag.sample(1, :);
-    for t = 2:length(mag.sample)
+    refMag = mag.sample(500, :);
+    for t = 501:length(mag.sample)
         euler = gyro.sample(t, :) * 1/100;
         rotm = eul2rotm(euler, 'XYZ');
         refMag = (rotm\(refMag)')';
@@ -28,7 +28,7 @@ for cnt = 1:length(showTrials)
 
     subplot(nRow, nCol, cnt)
     hold on
-    plot(diff)
+    plot(mag.diff)
     title('diff')
     legend({'x', 'y', 'z'})
 
@@ -40,6 +40,7 @@ for cnt = 1:length(showTrials)
     plot(mag.inferAngle)
 end
 
+return;
 %%
 
 tmp = data(accId).trial(3);

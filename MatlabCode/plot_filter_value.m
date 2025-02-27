@@ -1,5 +1,5 @@
-accId = 1;
-showTrials = 1:3;
+accId = 7;
+showTrials = 1:6;
 nCol = length(showTrials);
 nRow = 4;
 
@@ -11,7 +11,7 @@ for cnt = 1:length(showTrials)
     tmp = data(accId).trial(showTrials(cnt));
     mag = tmp.mag;
     acc = tmp.acc;
-    corr = tmp.corr(1, :);
+    corr = mag.corrData(1, :);
 
     k = 0;
 

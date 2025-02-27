@@ -1,4 +1,4 @@
-function [diff] = func_compute_bias(mag, gyro, bias, idx, searchRange, featureRange, prc)
+function [diff, src, dst] = func_compute_bias(mag, gyro, bias, idx, searchRange, featureRange, prc, flag)
 
 [~, src.pts]= min(mag.mean(idx + (-searchRange:-1)));
 src.pts = src.pts + (idx - searchRange + 1);
@@ -11,7 +11,12 @@ dst.pts = dst.pts + (-featureRange:featureRange);
 src.mag = mag.calibrated(src.pts, :) - bias;
 src.q = gyro.cumQ(src.pts, :);
 
-dst.mag = mag.calibrated(dst.pts, :);
+if flag
+    dst.mag = mag.calibrated(dst.pts, :) - bias;
+else
+    dst.mag = mag.calibrated(dst.pts, :);
+end
+
 dst.q = gyro.cumQ(dst.pts, :);
 
 diff = [];

@@ -15,12 +15,12 @@ calibrationThreshold = 2;
 extractInterval = (-wSize*2:wSize);
 calbrationInterval = (-6*wSize:-1*wSize);
 chargingLatency = 200;
-chargingAcc = {'batterypack1', 'charger1', 'charger2', 'holder2', 'holder3', 'holder4'};
+chargingAcc = {'batterypack1', 'charger1', 'charger2', 'charger3', 'holder2', 'holder3', 'holder4'};
 
 % Model and training data load
-mdlPath = '../MatlabCode/models/';
-mdl = load([mdlPath, 'rotMdl2', '.mat']);
-mdl = mdl.mdl;
+mdlPath = '../20231018_impl_hs/mdl/';
+mdl = load([mdlPath, 'ref2/portable/rbfSVM', '.mat']);
+mdl = mdl.m;
 
 featureMatrix.data = mdl.X;
 featureMatrix.label = mdl.Y;
@@ -293,41 +293,40 @@ parfor cnt = 1:length(data)
             end
 
             % Shaking detection part
-            if ~accessoryStatus && refPoint == -1
-                % Attach : Shaking detection is required
-                wRange = t + (-100:-1);           
-                flag = func_detect_shaking(acc, gyro, wRange);
-                
-                if flag
-                    % Extract closest detection points
-                    wRange = t + shakeInterval;
-                    indices = find(ismember(wRange, refCandidates));
-                    
-                    if ~isempty(indices)
-                        refPoint = wRange(indices(end));
-                        shakePoint(1) = t;
-                    end
-                end
-            elseif ~accessoryStatus && refPoint ~= -1
-                % To extract shaking range
-                wRange = t + (-100:-1);
-                
-                flag = func_detect_shaking(acc, gyro, wRange);
-
-                if flag
-                    shakePoint(2) = t;
-                else
-                    shakeFlag = true;
-                end
-            elseif accessoryStatus && refPoint == -1 && shakePoint(2) < refCandidates(end)
-                % Detach : Shaking detection x
-                refPoint = refCandidates(end);
-            end
+            % if ~accessoryStatus && refPoint == -1
+            %     % Attach : Shaking detection is required
+            %     wRange = t + (-100:-1);           
+            %     flag = func_detect_shaking(acc, gyro, wRange);
+            % 
+            %     if flag
+            %         % Extract closest detection points
+            %         wRange = t + shakeInterval;
+            %         indices = find(ismember(wRange, refCandidates));
+            % 
+            %         if ~isempty(indices)
+            %             refPoint = wRange(indices(end));
+            %             shakePoint(1) = t;
+            %         end
+            %     end
+            % elseif ~accessoryStatus && refPoint ~= -1
+            %     % To extract shaking range
+            %     wRange = t + (-100:-1);
+            % 
+            %     flag = func_detect_shaking(acc, gyro, wRange);
+            % 
+            %     if flag
+            %         shakePoint(2) = t;
+            %     else
+            %         shakeFlag = true;
+            %     end
+            % elseif accessoryStatus && refPoint == -1 && shakePoint(2) < refCandidates(end)
+            %     % Detach : Shaking detection x
+            %     refPoint = refCandidates(end);
+            % end
 
         
             % Diff calculation part
-            if refPoint ~= -1 && (refPoint + length(shakeInterval) <= t || t == length(mag.sample))...
-                    && (shakeFlag || accessoryStatus)
+            if refPoint ~= -1 && (t == length(mag.sample))
                 if accessoryStatus == false
                     % Attach : Using diff 1s comparsion, predict label      
                     if (shakePoint(1) >= (shakePoint(2) - 100)) || shakePoint(1) == -1

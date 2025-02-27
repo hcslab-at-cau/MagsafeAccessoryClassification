@@ -10,9 +10,7 @@ statistics = struct();
 % Confusion matrix filtered by detection
 labels.predict = [];
 labels.label = [];
-mdl = load('rotMdl.mat');
-mdl = mdl.mdl;
-totalAcc = reshape(objects, [length(objects), 1]);
+totalAcc = mdl.ClassNames;
 
 
 for cnt = 1:length(results)

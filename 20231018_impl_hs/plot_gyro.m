@@ -1,0 +1,100 @@
+accName = 'wallet2';
+accId = ismember({feature.name}, accName);
+accIdx = ismember({result.trial.name}, accName);
+cur = result.trial(accIdx);
+
+fig = figure(41);
+fig.Position(2) = 100;
+clf 
+
+nCol = 5;
+nRow = length(cur)/nCol;
+% nRow = 6;
+
+b = [];
+r = ref(ismember({ref.name}, accName));
+f = cell2mat({r.feature});
+means = mean(f);
+    
+refMean = [num2str(means(1)), ', ', num2str(means(2)), ', ', num2str(means(3))];
+
+[bh, ah] = butter(4, 40/100 * 2, 'high');
+selected = struct();
+
+for cnt = 1:nRow*nCol
+    res = cur(cnt).identify;
+    detected = find(~strcmp(res.id, "") & ~strcmp(res.id, "WR"))';
+    fp = find(strcmp(res.id, "WR"));
+    value = feature(accId).trial(cnt);
+    rmag = feature(accId).trial(cnt).rmag;
+    gyro = feature(accId).trial(cnt).gyro;
+    acc = feature(accId).trial(cnt).acc;
+    event = cur(cnt).event;
+    
+    sample = gyro.raw;
+    k = [sample(1, :)];
+
+    for cnt2 = 2:length(sample)
+        k = [k;k(cnt2-1, :) + sample(cnt2, :)];
+    end
+    
+    detect = find(~strcmp(res.id, ""));
+    updatedMag = rmag.rmOri;
+    tmp = zeros(1, 3);
+    srcs = [];
+    dsts = [];
+    attached.bias = zeros(1, 3);
+    
+    for cnt2 = 1:length(detect)
+        cnt2 = detect(cnt2);
+        bias = res.bias(cnt2, :);
+
+        [diff, src, dst, ~] = func_compute_bias_margin(rmag, gyro, bias, cnt2, ...
+                       params, params.identify.prc, true, attached.id ~= "NIL");
+
+        ls = length(src.pts);
+        ld = length(dst.pts);
+        % src.pts(ls)
+
+        srcs = [srcs, src.pts(ls)];
+        dsts = [dsts, dst.pts(ld)];
+        
+        if res.id(cnt2) == "NIL"
+            updatedMag(cnt2:end, :) = updatedMag(cnt2:end, :) - tmp;
+        else
+            updatedMag(cnt2:end, :) = updatedMag(cnt2:end, :) + bias;
+            tmp = bias;
+        end
+    end
+
+    if cnt == 2
+        selected.mag = rmag;
+        selected.updateMag = updatedMag;
+        selected.gyro = gyro;
+        selected.detect = detect;
+        selected.src = srcs;
+        selected.dst = dsts;
+    end
+    
+    plotData = rmag.calibrated;
+
+    n = fix((cnt-1)/nCol)*nCol + mod(cnt-1, nCol) + 1;
+    subplot(nRow, nCol, n)
+    plot(plotData)
+    hold on
+    gtLine = xline(event, '-', 'gt');
+    dLine = xline(detect, '-', 'dt');
+    stem(srcs, plotData(srcs, 1))
+    stem(dsts, plotData(dsts, 1))
+end
+
+return;
+%%
+
+rmag = selected.mag;
+
+fig = figure(1);
+fig.Position(2) = 100;
+clf
+
+plot(rmag.rmOri)

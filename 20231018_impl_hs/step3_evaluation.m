@@ -1,7 +1,9 @@
 %% Evaluate detection & identification results
 params.eval.accMargin = params.data.rate * 3;
-m = zeros(length(ref), length(ref));
-acc = {ref.name};
+m = zeros(length(data), length(data));
+acc = {data.name};
+
+loss = struct();
 
 for cnt = 1:length(result.trial)
     test = result.trial(cnt);
@@ -10,7 +12,10 @@ for cnt = 1:length(result.trial)
     cur.nEvent = size(test.event, 1);
     cur.isDetected = false(cur.nEvent, 2);
     cur.isIdentified = false(cur.nEvent, 2);
+    cur.fp = 0;
     cAcc = find(ismember(acc, test.name));
+
+    id = test.identify.id;
 
     for cnt2 = 1:cur.nEvent % Almostly 1
         for cnt3 = 1:2
@@ -21,11 +26,12 @@ for cnt = 1:length(result.trial)
             % If any kind of event was detected
             if sum(test.detect.all(range) ~= 0) > 0
                 cur.isDetected(cnt2, cnt3) = true;
+                id(range) = 0;
 
                 if cnt3 == 1 && sum(test.identify.id(range) ~= 0) > 0
                     idx = find(test.identify.id(range));
                     v = test.identify.id(range(idx));
-                    v = v(v > 0);
+                    v = v(v > 0 & v < params.data.nObjects + 1);
 
                     m(cAcc, v) = m(cAcc, v) + 1;
                 end
@@ -37,6 +43,8 @@ for cnt = 1:length(result.trial)
                 end
             end
         end
+
+        cur.fp = max(length(id(id > 0)), 0);
     end
 
     result.trial(cnt).eval = cur;
@@ -44,9 +52,10 @@ end
 
 %% Summarize results
 summary = struct();
-summary.dAcc = zeros(params.data.nObjects + 1, 2);
-summary.iAcc = zeros(params.data.nObjects + 1, 2);
-summary.nEvent = zeros(params.data.nObjects + 1, 1);
+summary.dAcc = zeros(length(ori) + 1, 2);
+summary.iAcc = zeros(length(ori) + 1, 2);
+summary.nEvent = zeros(length(ori)+ 1, 1);
+summary.fp = zeros(length(ori) + 1, 1);
 
 for cnt = 1:length(result.trial)
     cur = result.trial(cnt);    
@@ -58,13 +67,17 @@ for cnt = 1:length(result.trial)
         summary.iAcc(cur.class, :) = summary.iAcc(cur.class, :) + cur.eval.isIdentified;
     end
 
+    summary.fp(cur.class) = summary.fp(cur.class) + cur.eval.fp; 
+
     summary.nEvent(cur.class) = summary.nEvent(cur.class) + cur.eval.nEvent;
 end
 
 summary.nEvent(end) = sum(summary.nEvent(1:end - 1));
+summary.fp(end) = sum(summary.fp(1:end-1));
 
 summary.dAcc(end, :) = sum(summary.dAcc(1:end - 1, :));
 summary.iAcc(end, :) = sum(summary.iAcc(1:end - 1, :));
+
 
 summary.dAcc = summary.dAcc ./ summary.nEvent;
 summary.iAcc = summary.iAcc ./ summary.nEvent;
@@ -72,12 +85,23 @@ summary.iAcc = summary.iAcc ./ summary.nEvent;
 
 rowNames = {data(:).name};
 rowNames = [rowNames, 'Average'];
-colNames = {'Detection (A)', 'Detection (D)', 'Identification (A)', 'Identification (D)'};
-disp(array2table([summary.dAcc, summary.iAcc], ...
+
+colNames = {'Detection (A)', 'Detection (D)', 'Identification (A)', 'Identification (D)', 'False Positive'};
+table = array2table([summary.dAcc, summary.iAcc, summary.fp], ...
     'VariableNames', colNames, ...
-    'RowNames', rowNames))
+    'RowNames', rowNames);
+disp(table)
 
-
+% cm = confusionchart(m, {ref.name});
+return;
+% cm = confusionchart(m, {ref.name});
 %% Confusion matrix
-figure(2)
-cm = confusionchart(m, {ref.name});
+figure(55)
+
+if isempty(average)
+    cm = confusionchart(m, {ref.name});
+else
+    cm = confusionchart(m, mdl.ClassNames);
+end
+
+% cm = confusionchart(m, mdl.ClassNames);

@@ -27,8 +27,8 @@ for cnt = 1:size(postfix, 1)
         files(contains({files(:).folder}, 'meta')) = [];
         files(contains({files(:).name}, 'Calibration')) = [];
         files(contains({files(:).name}, 'Charging')) = [];
-        
-        for cnt3 = 1:length(files)/nSensors 
+
+        for cnt3 = 1:length(files)/nSensors
             idx = (cnt3 - 1) * nSensors;
     
             for cnt4 = 1:nSensors

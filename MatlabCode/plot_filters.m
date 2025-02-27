@@ -1,5 +1,5 @@
-accId = 1;
-trials = 1:3;
+accId = 7;
+trials = 1:6;
 
 nCol = length(trials);
 nRow = 6;
@@ -11,7 +11,7 @@ for cnt = 1:length(trials)
     detect = detected(accId).trial(trials(cnt));
     acc = data(accId).trial(trials(cnt)).('acc');
     mag = data(accId).trial(trials(cnt)).('mag');
-    corrData = data(accId).trial(trials(cnt)).corr;
+    % corrData = data(accId).trial(trials(cnt)).corr;
     
     k = 0;
 
